@@ -1,0 +1,19 @@
+<div class="relative w-full h-full">
+  <canvas
+    #demCanvas
+    class="w-full h-full block"
+    (mousemove)="onMouseMove($event)"
+    (mouseleave)="onMouseLeave()"
+  ></canvas>
+
+  <div
+    *ngIf="hoverInfo.visible"
+    class="absolute bg-black text-white text-xs p-2 rounded pointer-events-none"
+    [style.left.px]="hoverInfo.x + 10"
+    [style.top.px]="hoverInfo.y + 10"
+  >
+    <p>Lat: {{ hoverInfo.lat.toFixed(5) }}</p>
+    <p>Lon: {{ hoverInfo.lon.toFixed(5) }}</p>
+    <p>Elevation: {{ hoverInfo.elevation.toFixed(2) }} m</p>
+  </div>
+</div>
