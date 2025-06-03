@@ -5,6 +5,7 @@ import { SidebarComponent } from './sidebar/sidebar.component';
 import { MainViewComponent } from './main-view/main-view.component';
 import { DemDisplayComponent } from './main-view/dem-display/dem-display.component';
 import { TimelineComponent } from './main-view/timeline/timeline.component';
+import { SelectInitialPointsComponent } from './sidebar/select-initial-points/select-initial-points.component';
 
 @NgModule({
   declarations: [
@@ -12,7 +13,8 @@ import { TimelineComponent } from './main-view/timeline/timeline.component';
     SidebarComponent,
     MainViewComponent,
     DemDisplayComponent,
-    TimelineComponent
+    TimelineComponent,
+    SelectInitialPointsComponent
   ],
   imports: [
     BrowserModule

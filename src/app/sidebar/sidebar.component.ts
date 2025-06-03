@@ -1,54 +1,27 @@
-import { Component } from '@angular/core';
-
-interface Position {
-  x: number,
-  y: number,
-  elevation: number,
-}
-
-interface ObjectProperty {
-  id: string,
-  position: Position,
-  height?: number,
-  speed?: number,
-  path: Position[]
-}
-
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 
 @Component({
   selector: 'app-sidebar',
   templateUrl: './sidebar.component.html',
   styleUrls: ['./sidebar.component.css']
 })
-
 export class SidebarComponent {
+  @Input() selectedPoint: { lat: number; lon: number; elevation: number } | null = null;
 
-  // So i will have to create a private status for 5 functionality that would define 
-  // either the functionality is complete or not which would be defined by the done 
-  // button below of that functionality then a redo button would turn it back to false 
+  @Output() pointConfirmed = new EventEmitter<{ lat: number; lon: number; elevation: number }>();
+  @Output() pointReset = new EventEmitter<void>();
 
-  private isComplete: boolean[] = [false, false, false, false, false];
-  private isActive: boolean[] = [false, false, false, false, false];
-
-  
-  private ActivateOption(option: boolean) {
-    // When an option inputted this would read and will activate functionality of the button
-    console.log('Option activated:', option);
+  confirmPoint() {
+    if (this.selectedPoint) {
+      this.pointConfirmed.emit(this.selectedPoint);
+    }
   }
 
-  
-  public SelectInitialPosition(): void{
-    console.log('Initial position selected');
-    this.isActive[0] = true;
-    console.log('Select initial points');
+  resetPoint() {
+    this.pointReset.emit();
   }
-
-  public DefinePath(): void {}
-
-  public DefineHeight(): void {}
-
-  public DefineSpeed(): void {}
-
-  public ConfirmDetails(): void {}
-
 }
+
+
+
+

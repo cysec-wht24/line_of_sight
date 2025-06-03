@@ -1,8 +1,22 @@
-<div class="flex flex-col h-full w-full p-4 gap-4">
-  <div class="flex-grow bg-zinc-600 text-white flex items-center justify-center rounded-md">
-    <app-dem-display class="w-full h-full"></app-dem-display>
+<div class="flex flex-row h-full">
+  <div class="w-1/4">
+    <app-sidebar
+      [selectedPoint]="selectedPoint"
+      (pointConfirmed)="onPointConfirmed($event)"
+      (pointReset)="onPointReset()">
+</app-sidebar>
   </div>
-  <div class="h-20 flex items-center justify-center rounded-md"> 
-    <app-timeline class="w-full"></app-timeline>
+
+  <div class="flex flex-col flex-1 p-4 gap-4">
+    <div class="flex-grow bg-zinc-600 text-white flex items-center justify-center rounded-md">
+      <app-dem-display
+        class="w-full h-full"
+        (pointSelected)="onPointSelected($event)"
+      ></app-dem-display>
+    </div>
+    <div class="h-20 flex items-center justify-center rounded-md"> 
+      <app-timeline class="w-full"></app-timeline>
+    </div>
   </div>
 </div>
+

@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild, AfterViewInit, HostListener } from '@angular/core';
+import { Component, ElementRef, ViewChild, AfterViewInit, HostListener, Output, EventEmitter } from '@angular/core';
 import { fromArrayBuffer } from 'geotiff';
 
 @Component({
@@ -9,6 +9,7 @@ import { fromArrayBuffer } from 'geotiff';
 export class DemDisplayComponent implements AfterViewInit {
 
   @ViewChild('demCanvas', { static: false }) canvasRef!: ElementRef<HTMLCanvasElement>;
+  @Output() pointSelected = new EventEmitter<{ lat: number; lon: number; elevation: number }>();
 
   private resizeObserver!: ResizeObserver;
 
@@ -68,6 +69,27 @@ export class DemDisplayComponent implements AfterViewInit {
   @HostListener('window:resize')
   onResize() {
     this.resizeAndRender();
+  }
+
+  onCanvasClick(event: MouseEvent) {
+    const canvas = this.canvasRef.nativeElement;
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+
+    const origX = Math.floor(x / this.currentScale);
+    const origY = Math.floor(y / this.currentScale);
+    const i = origY * this.width + origX;
+
+    if (i >= 0 && i < this.rasterData.length) {
+      const val = this.rasterData[i];
+      if (val !== 0) {
+        const lon = this.tiepointX + origX * this.pixelSizeX;
+        const lat = this.tiepointY - origY * this.pixelSizeY;
+
+        this.pointSelected.emit({ lat, lon, elevation: val });
+      }
+    }
   }
 
   // 🆕 Mouse move handler

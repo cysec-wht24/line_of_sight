@@ -1,0 +1,20 @@
+<div class="flex flex-col gap-4">
+  <h2 class="text-xl font-bold text-black">Step 1: Select Initial Points</h2>
+
+  <div class="overflow-auto max-h-48 border p-2 rounded bg-gray-100 text-black">
+    <div *ngIf="selectedPoints.length === 0">Click on DEM to select points.</div>
+    <ul>
+      <li *ngFor="let point of selectedPoints; let i = index">
+        <span class="font-semibold">Point {{ i + 1 }}:</span>
+        Lat: {{ point.lat.toFixed(5) }}, Lon: {{ point.lon.toFixed(5) }},
+        Elev: {{ point.elevation.toFixed(2) }} m
+      </li>
+    </ul>
+  </div>
+
+  <div class="flex justify-between">
+    <button class="btn btn-error" (click)="onRedoClick()">Redo</button>
+    <button class="btn btn-success" [disabled]="selectedPoints.length === 0" (click)="onDoneClick()">Done</button>
+  </div>
+</div>
+
