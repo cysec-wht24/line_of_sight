@@ -11,6 +11,7 @@
     <div class="flex-grow bg-zinc-600 text-white flex items-center justify-center rounded-md">
       <app-dem-display
         class="w-full h-full"
+        [confirmedPoints]="confirmedPoints"
         (pointSelected)="onPointSelected($event)"
       ></app-dem-display>
     </div>

@@ -1,4 +1,15 @@
-import { Component, ElementRef, ViewChild, AfterViewInit, HostListener, Output, EventEmitter } from '@angular/core';
+import { 
+  Component, 
+  ElementRef, 
+  ViewChild, 
+  AfterViewInit, 
+  HostListener, 
+  Output, 
+  EventEmitter, 
+  Input, 
+  OnChanges, 
+  SimpleChanges, 
+} from '@angular/core';
 import { fromArrayBuffer } from 'geotiff';
 
 @Component({
@@ -6,10 +17,11 @@ import { fromArrayBuffer } from 'geotiff';
   templateUrl: './dem-display.component.html',
   styleUrls: ['./dem-display.component.css']
 })
-export class DemDisplayComponent implements AfterViewInit {
+export class DemDisplayComponent implements AfterViewInit, OnChanges {
 
   @ViewChild('demCanvas', { static: false }) canvasRef!: ElementRef<HTMLCanvasElement>;
   @Output() pointSelected = new EventEmitter<{ lat: number; lon: number; elevation: number }>();
+  @Input() confirmedPoints: { lat: number; lon: number; elevation: number }[] = [];
 
   private resizeObserver!: ResizeObserver;
 
@@ -41,6 +53,12 @@ export class DemDisplayComponent implements AfterViewInit {
   //   await this.loadDEM();     
   //   this.resizeAndRender();   
   // }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['confirmedPoints'] && this.canvasRef) {
+      this.resizeAndRender();
+    }
+  }
 
   ngAfterViewInit(): void {     
     this.loadDEM().then(() => {       
@@ -219,6 +237,19 @@ export class DemDisplayComponent implements AfterViewInit {
     }
 
     ctx.putImageData(imageData, 0, 0);
+
+    // 🆕 Draw stored points
+    if (this.confirmedPoints?.length) {
+      ctx.fillStyle = 'red';
+      for (const point of this.confirmedPoints) {
+        const canvasX = (point.lon - this.tiepointX) / this.pixelSizeX * this.currentScale;
+        const canvasY = (this.tiepointY - point.lat) / this.pixelSizeY * this.currentScale;
+
+        ctx.beginPath();
+        ctx.arc(canvasX, canvasY, 4, 0, 2 * Math.PI);
+        ctx.fill();
+      }
+    }
   }
 
   private getColorForElevation(elevation: number, min: number, max: number) {
