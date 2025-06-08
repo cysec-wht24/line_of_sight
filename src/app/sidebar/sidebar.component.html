@@ -1,26 +1,61 @@
 <div class="bg-white h-full flex flex-col gap-4 p-4">
   <!-- Input stays at the top -->
   <div>
-     <input 
+      <input 
         type="text" 
         placeholder="Type command"
         [(ngModel)]="commandInput"
         (keydown.enter)="processCommand()"
-        class="input" />
+        class="input" 
+      />
+      
+      
   </div>
 
   <!-- Selected point info (if any) -->
   <div *ngIf="selectionMode" class="text-sm mt-4">
-  <h3 class="font-bold mb-2 text-black">Select Initial Point</h3>
-  <ng-container *ngIf="selectedPoint; else noPoint">
-    <p class="text-black">Lat: {{ selectedPoint.lat.toFixed(5) }}</p>
-    <p class="text-black">Lon: {{ selectedPoint.lon.toFixed(5) }}</p>
-    <p class="text-black">Elevation: {{ selectedPoint.elevation.toFixed(2) }} m</p>
-  </ng-container>
-  <ng-template #noPoint>
-    <p class="text-black italic">No point selected yet.</p>
-  </ng-template>
-</div>
+    <h3 class="font-bold mb-2 text-black">Select Initial Point</h3>
+    <ng-container *ngIf="selectedPoint; else noPoint">
+      <p class="text-black">Lat: {{ selectedPoint.lat.toFixed(5) }}</p>
+      <p class="text-black">Lon: {{ selectedPoint.lon.toFixed(5) }}</p>
+      <p class="text-black">Elevation: {{ selectedPoint.elevation.toFixed(2) }} m</p>
+    </ng-container>
+    <ng-template #noPoint>
+      <p class="text-black italic">No point selected yet.</p>
+    </ng-template>
+  </div>
+
+  <!-- Confirmed points Specs -->
+  <div *ngIf="defineSpecMode && confirmedPoints.length > 0" class="mt-4">
+    <h3 class="font-bold mb-2 text-black">Define Speed & Height</h3>
+    <div class="mb-2 text-black">
+      <div>
+        <span class="font-semibold">Point {{ currentSpecIndex + 1 }} of {{ confirmedPoints.length }}</span>
+        <div>
+          Lat: {{ confirmedPoints[currentSpecIndex].lat.toFixed(5) }},
+          Lon: {{ confirmedPoints[currentSpecIndex].lon.toFixed(5) }},
+          Elev: {{ confirmedPoints[currentSpecIndex].elevation.toFixed(2) }} m
+        </div>
+      </div>
+      <input
+        type="number"
+        class="input input-bordered w-full mt-2"
+        placeholder="Speed"
+        [(ngModel)]="specSpeed"
+        (keydown.enter)="onSpecDone()"
+      />
+      <input
+        type="number"
+        class="input input-bordered w-full mt-2"
+        placeholder="Height"
+        [(ngModel)]="specHeight"
+        (keydown.enter)="onSpecDone()"
+      />
+    </div>
+  </div>
+  <div *ngIf="defineSpecMode && confirmedPoints.length === 0" class="text-red-600 font-semibold my-2">
+    Please select and confirm at least one point before defining specs.
+  </div>
 
   <!-- Spacer to push buttons to the bottom -->
   <div class="flex-1"></div>
@@ -29,13 +64,13 @@
   <div class="flex gap-2">
     <button
       class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2 rounded"
-      (click)="resetPoint()"
+      (click)="defineSpecMode ? onSpecRedo() : resetPoint()"
     >
       Redo
     </button>
     <button
       class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded"
-      (click)="confirmPoint()"
+      (click)="defineSpecMode ? onSpecDone() : confirmPoint()"
     >
       Done
     </button>

@@ -2,6 +2,7 @@
   <div class="w-1/4">
     <app-sidebar
       [selectedPoint]="selectedPoint"
+      [confirmedPoints]="confirmedPoints"
       (pointConfirmed)="onPointConfirmed($event)"
       (pointReset)="onPointReset()"
       (selectionModeChanged)="onSelectionModeChanged($event)">
