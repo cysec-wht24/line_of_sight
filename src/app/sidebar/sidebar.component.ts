@@ -16,7 +16,7 @@ export class SidebarComponent {
   selectionMode: boolean = false;
 
   processCommand() {
-    if (this.commandInput.trim() === 'select-initial-points') {
+    if (this.commandInput.trim() === 'select-initial') {
       this.selectionMode = true;
       this.selectionModeChanged.emit(true);
     } else {

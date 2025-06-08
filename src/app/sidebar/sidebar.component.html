@@ -10,12 +10,17 @@
   </div>
 
   <!-- Selected point info (if any) -->
-  <div *ngIf="selectedPoint" class="text-sm mt-4">
-    <h3 class="font-bold mb-2 text-black">Selected Point</h3>
+  <div *ngIf="selectionMode" class="text-sm mt-4">
+  <h3 class="font-bold mb-2 text-black">Select Initial Point</h3>
+  <ng-container *ngIf="selectedPoint; else noPoint">
     <p class="text-black">Lat: {{ selectedPoint.lat.toFixed(5) }}</p>
     <p class="text-black">Lon: {{ selectedPoint.lon.toFixed(5) }}</p>
     <p class="text-black">Elevation: {{ selectedPoint.elevation.toFixed(2) }} m</p>
-  </div>
+  </ng-container>
+  <ng-template #noPoint>
+    <p class="text-black italic">No point selected yet.</p>
+  </ng-template>
+</div>
 
   <!-- Spacer to push buttons to the bottom -->
   <div class="flex-1"></div>
