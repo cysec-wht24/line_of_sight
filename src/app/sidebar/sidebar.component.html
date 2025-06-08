@@ -1,6 +1,13 @@
 <div class="bg-white h-full flex flex-col gap-4 p-4">
   <!-- Input stays at the top -->
-  <input type="text" placeholder="Type command" class="input" />
+  <div>
+     <input 
+        type="text" 
+        placeholder="Type command"
+        [(ngModel)]="commandInput"
+        (keydown.enter)="processCommand()"
+        class="input" />
+  </div>
 
   <!-- Selected point info (if any) -->
   <div *ngIf="selectedPoint" class="text-sm mt-4">

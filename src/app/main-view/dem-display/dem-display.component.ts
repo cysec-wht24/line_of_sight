@@ -22,6 +22,7 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
   @ViewChild('demCanvas', { static: false }) canvasRef!: ElementRef<HTMLCanvasElement>;
   @Output() pointSelected = new EventEmitter<{ lat: number; lon: number; elevation: number }>();
   @Input() confirmedPoints: { lat: number; lon: number; elevation: number }[] = [];
+  @Input() selectionMode: boolean = false;
 
   private resizeObserver!: ResizeObserver;
 
@@ -90,6 +91,8 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
   }
 
   onCanvasClick(event: MouseEvent) {
+    if (!this.selectionMode) return; // Only allow selection in selection mode
+
     const canvas = this.canvasRef.nativeElement;
     const rect = canvas.getBoundingClientRect();
     const x = event.clientX - rect.left;

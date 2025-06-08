@@ -9,12 +9,19 @@ export class MainViewComponent {
   selectedPoint: { lat: number; lon: number; elevation: number } | null = null;
   confirmedPoints: { lat: number; lon: number; elevation: number }[] = [];
 
+  selectionMode = false;
+
+  onSelectionModeChanged(enabled: boolean) {
+    this.selectionMode = enabled;
+  }
+  
   onPointSelected(point: { lat: number; lon: number; elevation: number }) {
-    this.selectedPoint = point;
+      this.selectedPoint = point;
+      
   }
 
   onPointConfirmed(point: { lat: number; lon: number; elevation: number }) {
-  this.confirmedPoints.push(point);
+  this.confirmedPoints = [...this.confirmedPoints, point];
   console.log('✅ Confirmed Points:', this.confirmedPoints);
   this.selectedPoint = null; // Clear current so user can click next
 }

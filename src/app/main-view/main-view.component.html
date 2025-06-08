@@ -3,8 +3,9 @@
     <app-sidebar
       [selectedPoint]="selectedPoint"
       (pointConfirmed)="onPointConfirmed($event)"
-      (pointReset)="onPointReset()">
-</app-sidebar>
+      (pointReset)="onPointReset()"
+      (selectionModeChanged)="onSelectionModeChanged($event)">
+    </app-sidebar>
   </div>
 
   <div class="flex flex-col flex-1 p-4 gap-4">
@@ -12,6 +13,7 @@
       <app-dem-display
         class="w-full h-full"
         [confirmedPoints]="confirmedPoints"
+        [selectionMode]="selectionMode"
         (pointSelected)="onPointSelected($event)"
       ></app-dem-display>
     </div>

@@ -6,6 +6,7 @@ import { MainViewComponent } from './main-view/main-view.component';
 import { DemDisplayComponent } from './main-view/dem-display/dem-display.component';
 import { TimelineComponent } from './main-view/timeline/timeline.component';
 import { SelectInitialPointsComponent } from './sidebar/select-initial-points/select-initial-points.component';
+import { FormsModule } from '@angular/forms';
 
 @NgModule({
   declarations: [
@@ -17,7 +18,8 @@ import { SelectInitialPointsComponent } from './sidebar/select-initial-points/se
     SelectInitialPointsComponent
   ],
   imports: [
-    BrowserModule
+    BrowserModule,
+    FormsModule,
   ],
   providers: [],
   bootstrap: [AppComponent]
