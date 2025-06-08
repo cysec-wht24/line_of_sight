@@ -1,15 +1,31 @@
 <div class="bg-white h-full flex flex-col gap-4 p-4">
+  <!-- Input stays at the top -->
   <input type="text" placeholder="Type command" class="input" />
 
+  <!-- Selected point info (if any) -->
   <div *ngIf="selectedPoint" class="text-sm mt-4">
     <h3 class="font-bold mb-2 text-black">Selected Point</h3>
     <p class="text-black">Lat: {{ selectedPoint.lat.toFixed(5) }}</p>
     <p class="text-black">Lon: {{ selectedPoint.lon.toFixed(5) }}</p>
     <p class="text-black">Elevation: {{ selectedPoint.elevation.toFixed(2) }} m</p>
+  </div>
 
-    <div class="flex gap-2 mt-4">
-      <button class="btn btn-primary btn-sm" (click)="confirmPoint()">Done</button>
-      <button class="btn btn-secondary btn-sm" (click)="resetPoint()">Redo</button>
-    </div>
+  <!-- Spacer to push buttons to the bottom -->
+  <div class="flex-1"></div>
+
+  <!-- Buttons always at the bottom -->
+  <div class="flex gap-2">
+    <button
+      class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2 rounded"
+      (click)="resetPoint()"
+    >
+      Redo
+    </button>
+    <button
+      class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded"
+      (click)="confirmPoint()"
+    >
+      Done
+    </button>
   </div>
 </div>
