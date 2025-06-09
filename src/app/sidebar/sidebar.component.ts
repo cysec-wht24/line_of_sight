@@ -24,7 +24,7 @@ export class SidebarComponent {
 
   processCommand() {
     const cmd = this.commandInput.trim();
-    if (cmd === 'select-initial-points') {
+    if (cmd === 'select-initial') {
       this.selectionMode = true;
       this.selectionModeChanged.emit(true);
       this.defineSpecMode = false;
@@ -66,8 +66,13 @@ export class SidebarComponent {
   }
 
   onSpecRedo() {
-    this.specSpeed = '';
-    this.specHeight = '';
+    if (this.currentSpecIndex > 0) {
+      this.currentSpecIndex--;
+      // Load the previous values into the input fields
+      const prev = this.specInputs[this.currentSpecIndex];
+      this.specSpeed = prev.speed ? String(prev.speed) : '';
+      this.specHeight = prev.height ? String(prev.height) : '';
+    }
   }
 
   confirmPoint() {

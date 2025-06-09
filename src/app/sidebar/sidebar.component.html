@@ -8,8 +8,6 @@
         (keydown.enter)="processCommand()"
         class="input" 
       />
-      
-      
   </div>
 
   <!-- Selected point info (if any) -->
@@ -65,6 +63,7 @@
     <button
       class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2 rounded"
       (click)="defineSpecMode ? onSpecRedo() : resetPoint()"
+      [disabled]="defineSpecMode ? currentSpecIndex === 0 : false"
     >
       Redo
     </button>
