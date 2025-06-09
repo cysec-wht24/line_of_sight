@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, ViewChild } from '@angular/core';
+import { SidebarComponent } from '../sidebar/sidebar.component';
 
 @Component({
   selector: 'app-main-view',
@@ -6,10 +7,23 @@ import { Component } from '@angular/core';
   styleUrls: ['./main-view.component.css']
 })
 export class MainViewComponent {
+  @ViewChild(SidebarComponent) sidebar!: SidebarComponent;
+
   selectedPoint: { lat: number; lon: number; elevation: number } | null = null;
   confirmedPoints: { lat: number; lon: number; elevation: number }[] = [];
 
   selectionMode = false;
+  definePathMode = false;
+
+  onDefinePathModeChanged(enabled: boolean) {
+    this.definePathMode = enabled;
+  }
+
+  onPathPointSelected(point: { lat: number; lon: number; elevation: number }) {
+    if (this.definePathMode) {
+      this.sidebar.addPathPoint(point);
+    }
+  }
 
   onSelectionModeChanged(enabled: boolean) {
     this.selectionMode = enabled;

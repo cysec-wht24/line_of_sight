@@ -5,7 +5,10 @@
       [confirmedPoints]="confirmedPoints"
       (pointConfirmed)="onPointConfirmed($event)"
       (pointReset)="onPointReset()"
-      (selectionModeChanged)="onSelectionModeChanged($event)">
+      (selectionModeChanged)="onSelectionModeChanged($event)"
+      [definePathMode]="definePathMode"
+      (definePathModeChanged)="onDefinePathModeChanged($event)"
+      >
     </app-sidebar>
   </div>
 
@@ -16,6 +19,8 @@
         [confirmedPoints]="confirmedPoints"
         [selectionMode]="selectionMode"
         (pointSelected)="onPointSelected($event)"
+        [definePathMode]="definePathMode"
+        (pathPointSelected)="onPathPointSelected($event)"
       ></app-dem-display>
     </div>
     <div class="h-20 flex items-center justify-center rounded-md"> 

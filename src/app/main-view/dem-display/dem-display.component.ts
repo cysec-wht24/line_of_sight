@@ -20,9 +20,13 @@ import { fromArrayBuffer } from 'geotiff';
 export class DemDisplayComponent implements AfterViewInit, OnChanges {
 
   @ViewChild('demCanvas', { static: false }) canvasRef!: ElementRef<HTMLCanvasElement>;
-  @Output() pointSelected = new EventEmitter<{ lat: number; lon: number; elevation: number }>();
+  
   @Input() confirmedPoints: { lat: number; lon: number; elevation: number }[] = [];
   @Input() selectionMode: boolean = false;
+  @Input() definePathMode: boolean = false;
+  
+  @Output() pointSelected = new EventEmitter<{ lat: number; lon: number; elevation: number }>();
+  @Output() pathPointSelected = new EventEmitter<{ lat: number; lon: number; elevation: number }>();
 
   private resizeObserver!: ResizeObserver;
 
@@ -91,7 +95,8 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
   }
 
   onCanvasClick(event: MouseEvent) {
-    if (!this.selectionMode) return; // Only allow selection in selection mode
+    // Only allow selection in selection or definePath mode
+    if (!this.selectionMode && !this.definePathMode) return;
 
     const canvas = this.canvasRef.nativeElement;
     const rect = canvas.getBoundingClientRect();
@@ -108,7 +113,11 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
         const lon = this.tiepointX + origX * this.pixelSizeX;
         const lat = this.tiepointY - origY * this.pixelSizeY;
 
-        this.pointSelected.emit({ lat, lon, elevation: val });
+        if (this.definePathMode) {
+          this.pathPointSelected.emit({ lat, lon, elevation: val });
+        } else if (this.selectionMode) {
+          this.pointSelected.emit({ lat, lon, elevation: val });
+        }
       }
     }
   }

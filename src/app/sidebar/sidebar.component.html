@@ -52,7 +52,31 @@
     </div>
   </div>
   <div *ngIf="defineSpecMode && confirmedPoints.length === 0" class="text-red-600 font-semibold my-2">
-    Please select and confirm at least one point before defining specs.
+    Please select and confirm at least one point.
+  </div>
+
+  <!-- Define Path -->
+  <div *ngIf="definePathMode && confirmedPoints.length > 0" class="mt-4">
+    <h3 class="font-bold mb-2 text-black">Define Path for Point {{ currentPathIndex + 1 }} of {{ confirmedPoints.length }}</h3>
+    <div class="mb-2 text-black">
+      <div>
+        <span class="font-semibold">Start: </span>
+        Lat: {{ confirmedPoints[currentPathIndex].lat.toFixed(5) }},
+        Lon: {{ confirmedPoints[currentPathIndex].lon.toFixed(5) }},
+        Elev: {{ confirmedPoints[currentPathIndex].elevation.toFixed(2) }} m
+      </div>
+      <div class="mt-2">
+        <ul>
+          <li *ngFor="let pt of currentPath">
+            Lat: {{ pt.lat.toFixed(5) }}, Lon: {{ pt.lon.toFixed(5) }}, Elev: {{ pt.elevation.toFixed(2) }}
+          </li>
+        </ul>
+        <span class="text-xs text-gray-500">Click on the DEM to add path points.</span>
+      </div>
+    </div>
+  </div>
+  <div *ngIf="definePathMode && confirmedPoints.length === 0" class="text-red-600 font-semibold my-2">
+    Please select and confirm at least one point.
   </div>
 
   <!-- Spacer to push buttons to the bottom -->
@@ -60,18 +84,25 @@
 
   <!-- Buttons always at the bottom -->
   <div class="flex gap-2">
-    <button
-      class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2 rounded"
-      (click)="defineSpecMode ? onSpecRedo() : resetPoint()"
-      [disabled]="defineSpecMode ? currentSpecIndex === 0 : false"
-    >
-      Redo
-    </button>
-    <button
-      class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded"
-      (click)="defineSpecMode ? onSpecDone() : confirmPoint()"
-    >
-      Done
-    </button>
-  </div>
+  <button
+    class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2 rounded"
+    (click)="defineSpecMode ? onSpecRedo() : definePathMode ? onPathRedo() : resetPoint()"
+    [disabled]="
+      (defineSpecMode && currentSpecIndex === 0) ||
+      (definePathMode && currentPath.length === 0)
+    "
+  >
+    Redo
+  </button>
+  <button
+    class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded"
+    (click)="defineSpecMode ? onSpecDone() : definePathMode ? onPathDone() : confirmPoint()"
+    [disabled]="
+      (defineSpecMode && (!specSpeed || !specHeight)) ||
+      (definePathMode && currentPath.length === 0)
+    "
+  >
+    Done
+  </button>
+</div>
 </div>
