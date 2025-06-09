@@ -66,11 +66,14 @@
         Elev: {{ confirmedPoints[currentPathIndex].elevation.toFixed(2) }} m
       </div>
       <div class="mt-2">
+        <div class="scrollable-list">
         <ul>
           <li *ngFor="let pt of currentPath">
+            ->
             Lat: {{ pt.lat.toFixed(5) }}, Lon: {{ pt.lon.toFixed(5) }}, Elev: {{ pt.elevation.toFixed(2) }}
           </li>
         </ul>
+        </div>
         <span class="text-xs text-gray-500">Click on the DEM to add path points.</span>
       </div>
     </div>
