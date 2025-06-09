@@ -1,4 +1,4 @@
 .scrollable-list {
-  max-height: 180px;
+  max-height: 400px;
   overflow-y: auto;
 }
