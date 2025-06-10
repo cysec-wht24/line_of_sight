@@ -64,7 +64,10 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
   // }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['confirmedPoints'] && this.canvasRef) {
+    if (
+      (changes['confirmedPoints'] && this.canvasRef) ||
+      (changes['paths'] && this.canvasRef)
+    ) {
       this.resizeAndRender();
     }
   }

@@ -1,4 +1,4 @@
-import { Component, ViewChild } from '@angular/core';
+import { Component, ViewChild, ChangeDetectorRef } from '@angular/core';
 import { SidebarComponent } from '../sidebar/sidebar.component';
 
 @Component({
@@ -13,8 +13,12 @@ export class MainViewComponent {
   confirmedPoints: { lat: number; lon: number; elevation: number }[] = [];
   paths: Array<{ start: { lat: number; lon: number; elevation: number }, path: { lat: number; lon: number; elevation: number }[] }> = [];
 
+  constructor(private cdr: ChangeDetectorRef) {}
+
   onPathsChanged(paths: any) {
-    this.paths = [...paths]; // assign a new array reference
+    this.paths = [...paths]; // This shit won't trigger the change detection
+    this.cdr.detectChanges(); // Force update
+    console.log('Parent received paths:', this.paths);
   }
 
   selectionMode = false;
