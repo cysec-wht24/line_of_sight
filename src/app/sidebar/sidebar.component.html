@@ -82,30 +82,39 @@
     Please select and confirm at least one point.
   </div>
 
+  <!-- Show details message if present -->
+  <div
+    *ngIf="message"
+    class="bg-gray-100 text-black p-2 rounded mb-2 text-xs"
+    style="max-height: 250px; max-width: 100%; overflow: auto; white-space: pre; word-break: break-all;"
+  >
+    {{ message }}
+  </div>
+
   <!-- Spacer to push buttons to the bottom -->
   <div class="flex-1"></div>
 
   <!-- Buttons always at the bottom -->
   <div class="flex gap-2">
-  <button
-    class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2 rounded"
-    (click)="defineSpecMode ? onSpecRedo() : definePathMode ? onPathRedo() : resetPoint()"
-    [disabled]="
-      (defineSpecMode && currentSpecIndex === 0) ||
-      (definePathMode && currentPath.length === 0)
-    "
-  >
-    Redo
-  </button>
-  <button
-    class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded"
-    (click)="defineSpecMode ? onSpecDone() : definePathMode ? onPathDone() : confirmPoint()"
-    [disabled]="
-      (defineSpecMode && (!specSpeed || !specHeight)) ||
-      (definePathMode && currentPath.length === 0)
-    "
-  >
-    Done
-  </button>
-</div>
+    <button
+      class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2 rounded"
+      (click)="message ? hardReset() : defineSpecMode ? onSpecRedo() : definePathMode ? onPathRedo() : resetPoint()"
+      [disabled]="
+        (defineSpecMode && currentSpecIndex === 0) ||
+        (definePathMode && currentPath.length === 0)
+      "
+    >
+      Redo
+    </button>
+    <button
+      class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded"
+      (click)="message ? onConfirmDetailsDone() : defineSpecMode ? onSpecDone() : definePathMode ? onPathDone() : confirmPoint()"
+      [disabled]="
+        (defineSpecMode && (!specSpeed || !specHeight)) ||
+        (definePathMode && currentPath.length === 0)
+      "
+    >
+      Done
+    </button>
+  </div>
 </div>

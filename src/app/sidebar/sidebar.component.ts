@@ -42,7 +42,7 @@ export class SidebarComponent {
       this.defineSpecMode = false;
       if (this.definePathMode) {
         this.definePathMode = false;
-        this.definePathModeChanged.emit(false); // <-- Add this!
+        this.definePathModeChanged.emit(false);
       }
     } else if (cmd === 'define-spec') {
       this.selectionMode = false;
@@ -50,7 +50,7 @@ export class SidebarComponent {
       this.defineSpecMode = true;
       if (this.definePathMode) {
         this.definePathMode = false;
-        this.definePathModeChanged.emit(false); // <-- Add this!
+        this.definePathModeChanged.emit(false);
       }
       this.currentSpecIndex = 0;
       this.specInputs = this.confirmedPoints.map(() => ({ speed: 0, height: 0 }));
@@ -68,6 +68,15 @@ export class SidebarComponent {
         path: []
       }));
       this.currentPath = [];
+    } else if (cmd === 'confirm-details') {
+      this.selectionMode = false;
+      this.selectionModeChanged.emit(false);
+      this.defineSpecMode = false;
+      if (this.definePathMode) {
+        this.definePathMode = false;
+        this.definePathModeChanged.emit(false);
+      }
+      this.message = this.getAllDetails();
     } else {
       this.selectionMode = false;
       this.selectionModeChanged.emit(false);
@@ -77,6 +86,33 @@ export class SidebarComponent {
         this.definePathModeChanged.emit(false);
       }
     }
+  }
+
+  // Add this helper method to your class:
+  getAllDetails(): string {
+    let msg = '';
+    msg += `Confirmed Points:\n`;
+    this.confirmedPoints.forEach((pt, i) => {
+      msg += `  ${i + 1}: lat=${pt.lat}, lon=${pt.lon}, elev=${pt.elevation}\n`;
+    });
+
+    if (this.specInputs.length) {
+      msg += `\nSpecs:\n`;
+      this.specInputs.forEach((spec, i) => {
+        msg += `  Point ${i + 1}: speed=${spec.speed}, height=${spec.height}\n`;
+      });
+    }
+
+    if (this.paths.length) {
+      msg += `\nPaths:\n`;
+      this.paths.forEach((p, i) => {
+        msg += `  Path ${i + 1} (from lat=${p.start.lat}, lon=${p.start.lon}):\n`;
+        p.path.forEach((pt, j) => {
+          msg += `    ${j + 1}: lat=${pt.lat}, lon=${pt.lon}, elev=${pt.elevation}\n`;
+        });
+      });
+    }
+    return msg || 'No details available.';
   }
 
   // Called by parent when a path point is selected on DEM
@@ -138,6 +174,31 @@ export class SidebarComponent {
       this.specSpeed = prev.speed ? String(prev.speed) : '';
       this.specHeight = prev.height ? String(prev.height) : '';
     }
+  }
+
+  hardReset() {
+    // Clear all state
+    this.confirmedPoints = [];
+    this.specInputs = [];
+    this.specSpeed = '';
+    this.specHeight = '';
+    this.currentSpecIndex = 0;
+    this.paths = [];
+    this.currentPath = [];
+    this.currentPathIndex = 0;
+    this.message = '';
+    this.selectionMode = false;
+    this.defineSpecMode = false;
+    this.definePathMode = false;
+    this.selectionModeChanged.emit(false);
+    this.definePathModeChanged.emit(false);
+    this.pathsChanged.emit([...this.paths]);
+    this.pointReset.emit();
+  }
+
+  onConfirmDetailsDone() {
+    // For now, just clear the message and do nothing else
+    this.message = '';
   }
 
   confirmPoint() {
