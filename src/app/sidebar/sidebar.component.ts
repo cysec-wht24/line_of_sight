@@ -14,6 +14,7 @@ export class SidebarComponent {
   @Output() pointReset = new EventEmitter<void>();
   @Output() selectionModeChanged = new EventEmitter<boolean>();
   @Output() definePathModeChanged = new EventEmitter<boolean>();
+  @Output() pathsChanged = new EventEmitter<any>();
  
   message: string = '';
   commandInput: string = '';
@@ -93,6 +94,8 @@ export class SidebarComponent {
     } else {
       this.definePathMode = false;
       this.definePathModeChanged.emit(false);
+      this.paths = [...this.paths];
+      this.pathsChanged.emit(this.paths); // <--- emit the updated paths
       console.log('All paths:', this.paths);
     }
   }

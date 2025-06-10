@@ -8,7 +8,8 @@
       (selectionModeChanged)="onSelectionModeChanged($event)"
       [definePathMode]="definePathMode"
       (definePathModeChanged)="onDefinePathModeChanged($event)"
-      >
+      (pathsChanged)="onPathsChanged($event)"
+    >
     </app-sidebar>
   </div>
 
@@ -21,6 +22,7 @@
         (pointSelected)="onPointSelected($event)"
         [definePathMode]="definePathMode"
         (pathPointSelected)="onPathPointSelected($event)"
+        [paths]="paths"
       ></app-dem-display>
     </div>
     <div class="h-20 flex items-center justify-center rounded-md"> 

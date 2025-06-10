@@ -24,6 +24,10 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
   @Input() confirmedPoints: { lat: number; lon: number; elevation: number }[] = [];
   @Input() selectionMode: boolean = false;
   @Input() definePathMode: boolean = false;
+  @Input() paths: Array<{
+    start: { lat: number; lon: number; elevation: number };
+    path: { lat: number; lon: number; elevation: number }[];
+  }> = [];
   
   @Output() pointSelected = new EventEmitter<{ lat: number; lon: number; elevation: number }>();
   @Output() pathPointSelected = new EventEmitter<{ lat: number; lon: number; elevation: number }>();
@@ -230,8 +234,8 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    // Draw DEM raster
     const imageData = ctx.createImageData(scaledWidth, scaledHeight);
-
     for (let y = 0; y < scaledHeight; y++) {
       for (let x = 0; x < scaledWidth; x++) {
         const origX = Math.floor(x / scale);
@@ -240,23 +244,58 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
         const val = this.rasterData[i];
         const color = this.getColorForElevation(val, this.minElevation, this.maxElevation);
         const idx = (y * scaledWidth + x) * 4;
-
         imageData.data[idx + 0] = color.r;
         imageData.data[idx + 1] = color.g;
         imageData.data[idx + 2] = color.b;
         imageData.data[idx + 3] = 255;
       }
     }
-
     ctx.putImageData(imageData, 0, 0);
 
-    // 🆕 Draw stored points
+    // Draw paths (red lines and orange points)
+    if (this.paths?.length) {
+      for (const pathObj of this.paths) {
+        const start = pathObj.start;
+        const path = pathObj.path;
+
+        // Draw red line from start to each path point in order
+        if (path.length > 0) {
+          ctx.strokeStyle = 'red';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          // Start at the initial point
+          let prevX = (start.lon - this.tiepointX) / this.pixelSizeX * this.currentScale;
+          let prevY = (this.tiepointY - start.lat) / this.pixelSizeY * this.currentScale;
+          ctx.moveTo(prevX, prevY);
+
+          for (const pt of path) {
+            const x = (pt.lon - this.tiepointX) / this.pixelSizeX * this.currentScale;
+            const y = (this.tiepointY - pt.lat) / this.pixelSizeY * this.currentScale;
+            ctx.lineTo(x, y);
+            prevX = x;
+            prevY = y;
+          }
+          ctx.stroke();
+        }
+
+        // Draw orange dots for path points
+        ctx.fillStyle = 'orange';
+        for (const pt of path) {
+          const x = (pt.lon - this.tiepointX) / this.pixelSizeX * this.currentScale;
+          const y = (this.tiepointY - pt.lat) / this.pixelSizeY * this.currentScale;
+          ctx.beginPath();
+          ctx.arc(x, y, 4, 0, 2 * Math.PI);
+          ctx.fill();
+        }
+      }
+    }
+
+    // Draw confirmed points as red dots (on top)
     if (this.confirmedPoints?.length) {
       ctx.fillStyle = 'red';
       for (const point of this.confirmedPoints) {
         const canvasX = (point.lon - this.tiepointX) / this.pixelSizeX * this.currentScale;
         const canvasY = (this.tiepointY - point.lat) / this.pixelSizeY * this.currentScale;
-
         ctx.beginPath();
         ctx.arc(canvasX, canvasY, 4, 0, 2 * Math.PI);
         ctx.fill();

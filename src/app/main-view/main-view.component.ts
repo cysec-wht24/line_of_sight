@@ -11,6 +11,11 @@ export class MainViewComponent {
 
   selectedPoint: { lat: number; lon: number; elevation: number } | null = null;
   confirmedPoints: { lat: number; lon: number; elevation: number }[] = [];
+  paths: Array<{ start: { lat: number; lon: number; elevation: number }, path: { lat: number; lon: number; elevation: number }[] }> = [];
+
+  onPathsChanged(paths: any) {
+    this.paths = [...paths]; // assign a new array reference
+  }
 
   selectionMode = false;
   definePathMode = false;
