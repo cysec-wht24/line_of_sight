@@ -11,14 +11,18 @@ export class MainViewComponent {
 
   selectedPoint: { lat: number; lon: number; elevation: number } | null = null;
   confirmedPoints: { lat: number; lon: number; elevation: number }[] = [];
-  paths: Array<{ start: { lat: number; lon: number; elevation: number }, path: { lat: number; lon: number; elevation: number }[] }> = [];
+  
+  paths: any[] = [];
+  currentPath: any[] = [];
+  currentPathIndex: number = 0;
 
   constructor(private cdr: ChangeDetectorRef) {}
 
-  onPathsChanged(paths: any) {
-    this.paths = [...paths]; // This shit won't trigger the change detection
-    this.cdr.detectChanges(); // Force update
-    console.log('Parent received paths:', this.paths);
+  onPathsChanged(event: { paths?: any[], currentPath?: any[], currentPathIndex?: number }) {
+    this.paths = Array.isArray(event.paths) ? [...event.paths] : [];
+    this.currentPath = Array.isArray(event.currentPath) ? [...event.currentPath] : [];
+    this.currentPathIndex = typeof event.currentPathIndex === 'number' ? event.currentPathIndex : 0;
+    this.cdr.detectChanges();
   }
 
   selectionMode = false;

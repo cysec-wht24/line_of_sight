@@ -28,6 +28,8 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
     start: { lat: number; lon: number; elevation: number };
     path: { lat: number; lon: number; elevation: number }[];
   }> = [];
+  @Input() currentPath: any[] = [];
+  @Input() currentPathIndex: number = 0;
   
   @Output() pointSelected = new EventEmitter<{ lat: number; lon: number; elevation: number }>();
   @Output() pathPointSelected = new EventEmitter<{ lat: number; lon: number; elevation: number }>();
@@ -255,7 +257,7 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
     }
     ctx.putImageData(imageData, 0, 0);
 
-    // Draw paths (red lines and orange points)
+    // Draw committed paths (red lines and orange points)
     if (this.paths?.length) {
       for (const pathObj of this.paths) {
         const start = pathObj.start;
@@ -266,7 +268,6 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
           ctx.strokeStyle = 'red';
           ctx.lineWidth = 2;
           ctx.beginPath();
-          // Start at the initial point
           let prevX = (start.lon - this.tiepointX) / this.pixelSizeX * this.currentScale;
           let prevY = (this.tiepointY - start.lat) / this.pixelSizeY * this.currentScale;
           ctx.moveTo(prevX, prevY);
@@ -290,6 +291,41 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
           ctx.arc(x, y, 4, 0, 2 * Math.PI);
           ctx.fill();
         }
+      }
+    }
+
+    // Draw in-progress path (currentPath) if in definePathMode
+    if (
+      this.definePathMode &&
+      this.currentPath &&
+      this.currentPath.length > 0 &&
+      this.confirmedPoints?.length > this.currentPathIndex
+    ) {
+      const start = this.confirmedPoints[this.currentPathIndex];
+      let prevX = (start.lon - this.tiepointX) / this.pixelSizeX * this.currentScale;
+      let prevY = (this.tiepointY - start.lat) / this.pixelSizeY * this.currentScale;
+      ctx.strokeStyle = 'red';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(prevX, prevY);
+
+      for (const pt of this.currentPath) {
+        const x = (pt.lon - this.tiepointX) / this.pixelSizeX * this.currentScale;
+        const y = (this.tiepointY - pt.lat) / this.pixelSizeY * this.currentScale;
+        ctx.lineTo(x, y);
+        prevX = x;
+        prevY = y;
+      }
+      ctx.stroke();
+
+      // Draw orange dots for in-progress path points
+      ctx.fillStyle = 'orange';
+      for (const pt of this.currentPath) {
+        const x = (pt.lon - this.tiepointX) / this.pixelSizeX * this.currentScale;
+        const y = (this.tiepointY - pt.lat) / this.pixelSizeY * this.currentScale;
+        ctx.beginPath();
+        ctx.arc(x, y, 4, 0, 2 * Math.PI);
+        ctx.fill();
       }
     }
 

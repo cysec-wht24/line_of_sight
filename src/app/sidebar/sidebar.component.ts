@@ -119,11 +119,12 @@ export class SidebarComponent {
   addPathPoint(point: { lat: number; lon: number; elevation: number }) {
     if (this.definePathMode) {
       this.currentPath.push(point);
-      // Update the path in the paths array
-      this.paths[this.currentPathIndex].path = [...this.currentPath];
-      // Emit the updated paths to the parent
-      this.pathsChanged.emit([...this.paths]);
-      console.log('Path point added:', point, 'Current paths:', this.paths);
+      // Emit committed paths + in-progress path as a special property
+      this.pathsChanged.emit({
+        paths: [...this.paths],
+        currentPath: [...this.currentPath],
+        currentPathIndex: this.currentPathIndex
+      });
     }
   }
 
@@ -135,9 +136,12 @@ export class SidebarComponent {
     } else {
       this.definePathMode = false;
       this.definePathModeChanged.emit(false);
-      this.pathsChanged.emit([...this.paths]);
-      console.log('All paths:', this.paths);
     }
+    this.pathsChanged.emit({
+      paths: [...this.paths],
+      currentPath: [],
+      currentPathIndex: this.currentPathIndex
+    });
   }
 
   onPathRedo() {
@@ -192,7 +196,11 @@ export class SidebarComponent {
     this.definePathMode = false;
     this.selectionModeChanged.emit(false);
     this.definePathModeChanged.emit(false);
-    this.pathsChanged.emit([...this.paths]);
+    this.pathsChanged.emit({
+      paths: [],
+      currentPath: [],
+      currentPathIndex: 0
+    });
     this.pointReset.emit();
   }
 
