@@ -1,5 +1,6 @@
 import { Component, ViewChild, ChangeDetectorRef } from '@angular/core';
 import { SidebarComponent } from '../sidebar/sidebar.component';
+import { TimelineComponent } from './timeline/timeline.component';
 
 @Component({
   selector: 'app-main-view',
@@ -8,6 +9,7 @@ import { SidebarComponent } from '../sidebar/sidebar.component';
 })
 export class MainViewComponent {
   @ViewChild(SidebarComponent) sidebar!: SidebarComponent;
+  @ViewChild(TimelineComponent) timeline!: TimelineComponent;
 
   selectedPoint: { lat: number; lon: number; elevation: number } | null = null;
   confirmedPoints: { lat: number; lon: number; elevation: number }[] = [];
@@ -17,6 +19,12 @@ export class MainViewComponent {
   currentPathIndex: number = 0;
 
   constructor(private cdr: ChangeDetectorRef) {}
+
+  onConfirmDetailsFinalized(details: any) {
+    if (this.timeline) {
+      this.timeline.startSimulation(details);
+    }
+  }
 
   onPathsChanged(event: { paths?: any[], currentPath?: any[], currentPathIndex?: number }) {
     this.paths = Array.isArray(event.paths) ? [...event.paths] : [];

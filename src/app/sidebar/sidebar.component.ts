@@ -15,6 +15,7 @@ export class SidebarComponent {
   @Output() selectionModeChanged = new EventEmitter<boolean>();
   @Output() definePathModeChanged = new EventEmitter<boolean>();
   @Output() pathsChanged = new EventEmitter<any>();
+  @Output() confirmDetailsFinalized = new EventEmitter<any>();
  
   message: string = '';
   commandInput: string = '';
@@ -205,7 +206,26 @@ export class SidebarComponent {
   }
 
   onConfirmDetailsDone() {
-    // For now, just clear the message and do nothing else
+    // Validation: check all points have path, speed, and height
+    const allHaveSpecs = this.specInputs.length === this.confirmedPoints.length &&
+      this.specInputs.every(spec => spec.speed > 0 && spec.height > 0);
+    const allHavePaths = this.paths.length === this.confirmedPoints.length &&
+      this.paths.every(p => Array.isArray(p.path) && p.path.length > 0);
+
+    if (!allHaveSpecs || !allHavePaths) {
+      this.message = "Fill all details for all points";
+      return;
+    }
+
+    // Prepare data to send
+    const details = this.confirmedPoints.map((pt, i) => ({
+      start: pt,
+      path: this.paths[i].path,
+      speed: this.specInputs[i].speed,
+      height: this.specInputs[i].height
+    }));
+
+    this.confirmDetailsFinalized.emit(details);
     this.message = '';
   }
 
