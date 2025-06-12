@@ -30,6 +30,7 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
   }> = [];
   @Input() currentPath: any[] = [];
   @Input() currentPathIndex: number = 0;
+  @Input() movingPoints: { x: number; y: number; id: number }[] = [];
   
   @Output() pointSelected = new EventEmitter<{ lat: number; lon: number; elevation: number }>();
   @Output() pathPointSelected = new EventEmitter<{ lat: number; lon: number; elevation: number }>();
@@ -68,7 +69,8 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     if (
       (changes['confirmedPoints'] && this.canvasRef) ||
-      (changes['paths'] && this.canvasRef)
+      (changes['paths'] && this.canvasRef) ||
+      (changes['movingPoints'] && this.canvasRef)
     ) {
       this.resizeAndRender();
     }
@@ -116,6 +118,8 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
     const origY = Math.floor(y / this.currentScale);
     const i = origY * this.width + origX;
 
+    console.log('Canvas click:', { x, y, origX, origY, i });
+    
     if (i >= 0 && i < this.rasterData.length) {
       const val = this.rasterData[i];
       if (val !== 0) {
@@ -124,8 +128,10 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
 
         if (this.definePathMode) {
           this.pathPointSelected.emit({ lat, lon, elevation: val });
+          console.log('Canvas click:', { x, y, origX, origY, i });
         } else if (this.selectionMode) {
           this.pointSelected.emit({ lat, lon, elevation: val });
+          console.log('Canvas click:', { x, y, origX, origY, i });
         }
       }
     }
@@ -214,6 +220,12 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
       if (val < this.minElevation) this.minElevation = val;
       if (val > this.maxElevation) this.maxElevation = val;
     }
+
+    console.log('DEM loaded:');
+    console.log('  tiepointX:', this.tiepointX, 'tiepointY:', this.tiepointY);
+    console.log('  pixelSizeX:', this.pixelSizeX, 'pixelSizeY:', this.pixelSizeY);
+    console.log('  width:', this.width, 'height:', this.height);
+    console.log('  minElevation:', this.minElevation, 'maxElevation:', this.maxElevation);
   }
 
   private resizeAndRender() {
@@ -338,6 +350,24 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
         ctx.beginPath();
         ctx.arc(canvasX, canvasY, 4, 0, 2 * Math.PI);
         ctx.fill();
+      }
+    }
+
+    // Draw moving points (from timeline animation)
+    if (this.movingPoints?.length) {
+      ctx.fillStyle = 'blue';
+      for (const pt of this.movingPoints) {
+        // Convert (x, y) to canvas coordinates (x = lon, y = lat)
+        const canvasX = (pt.x - this.tiepointX) / this.pixelSizeX * this.currentScale;
+        const canvasY = (this.tiepointY - pt.y) / this.pixelSizeY * this.currentScale;
+        ctx.beginPath();
+        ctx.arc(canvasX, canvasY, 6, 0, 2 * Math.PI); // Larger radius for visibility
+        ctx.fill();
+        // Optionally, draw id
+        ctx.fillStyle = 'white';
+        ctx.font = '10px Arial';
+        ctx.fillText(String(pt.id), canvasX - 3, canvasY + 3);
+        ctx.fillStyle = 'blue';
       }
     }
   }

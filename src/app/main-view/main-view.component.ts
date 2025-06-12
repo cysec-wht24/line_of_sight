@@ -13,12 +13,24 @@ export class MainViewComponent {
 
   selectedPoint: { lat: number; lon: number; elevation: number } | null = null;
   confirmedPoints: { lat: number; lon: number; elevation: number }[] = [];
-  
+  movingPoints: { x: number, y: number, id: number }[] = [];
+
   paths: any[] = [];
   currentPath: any[] = [];
   currentPathIndex: number = 0;
+  rasterData: number[] = [];
+  width: number = 0;
+  height: number = 0;
+  tiepointX: number = 0;
+  tiepointY: number = 0;
+  pixelSizeX: number = 1;
+  pixelSizeY: number = 1;
 
   constructor(private cdr: ChangeDetectorRef) {}
+
+  onPositionsChanged(points: { x: number, y: number, id: number }[]) {
+    this.movingPoints = points;
+  }
 
   onConfirmDetailsFinalized(details: any) {
     if (this.timeline) {

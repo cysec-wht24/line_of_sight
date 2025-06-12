@@ -26,10 +26,21 @@
         [paths]="paths"
         [currentPath]="currentPath"
         [currentPathIndex]="currentPathIndex"
+        [movingPoints]="movingPoints"
       ></app-dem-display>
     </div>
     <div class="h-20 flex items-center justify-center rounded-md"> 
-      <app-timeline class="w-full"></app-timeline>
+      <app-timeline
+        class="w-full"
+        [rasterData]="rasterData"
+        [width]="width"
+        [height]="height"
+        [tiepointX]="tiepointX"
+        [tiepointY]="tiepointY"
+        [pixelSizeX]="pixelSizeX"
+        [pixelSizeY]="pixelSizeY"
+        (positionsChanged)="onPositionsChanged($event)"
+      ></app-timeline>
     </div>
   </div>
 </div>
