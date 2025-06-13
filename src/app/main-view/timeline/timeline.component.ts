@@ -207,10 +207,23 @@ export class TimelineComponent implements OnInit{
       } else {
         const prev = point.path[idx - 1];
         const next = point.path[idx];
-        const t = (this.currentTime - prev.timeOffset) / (next.timeOffset - prev.timeOffset);
+        let t = (this.currentTime - prev.timeOffset) / (next.timeOffset - prev.timeOffset);
+        
+        // CLAMP t to [0, 1] to avoid floating point drifts
+        const clampedT = Math.min(Math.max(t, 0), 1);
+
+        // Debug logs
+        console.log(`Prev timeOffset: ${prev.timeOffset}, Next timeOffset: ${next.timeOffset}`);
+        console.log(`Raw t: ${t}, Clamped t: ${clampedT}`);
+
+        const interpolatedLon = prev.lon + (next.lon - prev.lon) * clampedT;
+        const interpolatedLat = prev.lat + (next.lat - prev.lat) * clampedT;
+
+        console.log(`Interpolated Position - ID ${point.id}: Lon ${interpolatedLon}, Lat ${interpolatedLat}`);
+
         return {
-          lon: prev.lon + (next.lon - prev.lon) * t,
-          lat: prev.lat + (next.lat - prev.lat) * t,
+          lon: interpolatedLon,
+          lat: interpolatedLat,
           id: point.id
         };
       }
