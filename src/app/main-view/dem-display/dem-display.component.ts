@@ -198,6 +198,9 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
     const image = await tiff.getImage();
     this.width = image.getWidth();
     this.height = image.getHeight();
+    const geoKeys = image.getGeoKeys();
+    console.log("geoKeys are ", geoKeys);
+
 
     this.rasterData = await image.readRasters({ interleave: true }) as Float32Array;
     //console.log(this.rasterData);
