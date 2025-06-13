@@ -28,8 +28,12 @@ export class MainViewComponent {
 
   constructor(private cdr: ChangeDetectorRef) {}
 
-  onPositionsChanged(points: { x: number, y: number, id: number }[]) {
-    this.movingPoints = points;
+  onPositionsChanged(points: { lon: number, lat: number, id: number }[]) {
+    this.movingPoints = points.map(p => ({
+      x: p.lon,
+      y: p.lat,
+      id: p.id
+    }));
   }
 
   onConfirmDetailsFinalized(details: any) {
