@@ -1,8 +1,8 @@
 import { Component, Output, EventEmitter, Input, OnInit } from '@angular/core';
 
 interface PointData {
-  start: { lon: number; lat: number; elevation: number };
-  path: { lon: number; lat: number; elevation: number }[];
+  start: { lon: number; lat: number };
+  path: { lon: number; lat: number }[];
   speed: number;
   height: number;
 }
@@ -44,6 +44,28 @@ export class TimelineComponent implements OnInit {
 
   ngOnInit(): void {}
 
+  getElevation(lon: number, lat: number): number {
+    const epsilon = 1e-8;
+    const minLon = this.tiepointX;
+    const maxLon = this.tiepointX + (this.width - 1) * this.pixelSizeX;
+    const maxLat = this.tiepointY;
+    const minLat = this.tiepointY - (this.height - 1) * this.pixelSizeY;
+
+    const clampedLon = Math.min(Math.max(lon, minLon - epsilon), maxLon + epsilon);
+    const clampedLat = Math.min(Math.max(lat, minLat - epsilon), maxLat + epsilon);
+
+    const col = Math.floor((clampedLon - this.tiepointX) / this.pixelSizeX);
+    const row = Math.floor((this.tiepointY - clampedLat) / this.pixelSizeY);
+
+    if (col < 0 || col >= this.width || row < 0 || row >= this.height) {
+      console.warn(`Out of bounds DEM sampling at (${lon}, ${lat})`);
+      return 0;
+    }
+
+    const index = row * this.width + col;
+    return this.rasterData[index];
+  }
+
   haversine(lat1: number, lon1: number, lat2: number, lon2: number): number {
     const R = 6371000;
     const toRad = (deg: number) => deg * (Math.PI / 180);
@@ -53,20 +75,14 @@ export class TimelineComponent implements OnInit {
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   }
 
-  interpolatePoints(
-    p1: { lon: number; lat: number; elevation: number },
-    p2: { lon: number; lat: number; elevation: number },
-    distance: number,
-    segmentLength: number
-  ): { lon: number; lat: number; elevation: number }[] {
+  interpolatePoints(p1: { lon: number, lat: number }, p2: { lon: number, lat: number }, distance: number, segmentLength: number): { lon: number, lat: number }[] {
     const segments = Math.ceil(distance / segmentLength);
-    const result: { lon: number; lat: number; elevation: number }[] = [];
+    const result: { lon: number, lat: number }[] = [];
     for (let i = 1; i <= segments; i++) {
       const t = i / segments;
       result.push({
         lon: p1.lon + t * (p2.lon - p1.lon),
-        lat: p1.lat + t * (p2.lat - p1.lat),
-        elevation: p1.elevation + t * (p2.elevation - p1.elevation)
+        lat: p1.lat + t * (p2.lat - p1.lat)
       });
     }
     return result;
@@ -92,7 +108,7 @@ export class TimelineComponent implements OnInit {
       let stopped = false;
       let prev = point.start;
 
-      const elevationStart = prev.elevation + point.height;
+      const elevationStart = this.getElevation(prev.lon, prev.lat) + point.height;
       const simPath: SimulatedPathPoint[] = [{
         lon: prev.lon,
         lat: prev.lat,
@@ -108,16 +124,11 @@ export class TimelineComponent implements OnInit {
         const end = fullPath[i + 1];
         const distance = this.haversine(start.lat, start.lon, end.lat, end.lon);
         const segments = this.interpolatePoints(start, end, distance, this.segmentLength);
-        let segmentStart: { lon: number; lat: number; elevation: number } = start;
+        let segmentStart = start;
 
         for (const segmentEnd of segments) {
           const segmentDistance = this.haversine(segmentStart.lat, segmentStart.lon, segmentEnd.lat, segmentEnd.lon);
-
-          // Use provided elevation for interpolated segmentEnd:
-          // Simple linear interpolation of elevation between start and end
-          const t = this.haversine(start.lat, start.lon, segmentEnd.lat, segmentEnd.lon) / distance;
-          const interpolatedElevation = start.elevation + t * (end.elevation - start.elevation);
-          const elevationEnd = interpolatedElevation + point.height;
+          const elevationEnd = this.getElevation(segmentEnd.lon, segmentEnd.lat) + point.height;
 
           const elevationDiff = elevationEnd - lastElevation;
           const angle = Math.abs(Math.atan2(elevationDiff, segmentDistance) * 180 / Math.PI);
@@ -169,8 +180,8 @@ export class TimelineComponent implements OnInit {
 
   startSimulation(details: any) {
     const parsedDetails: PointData[] = details.map((d: any) => ({
-      start: { lon: d.start.lon, lat: d.start.lat, elevation: d.start.elevation },
-      path: d.path.map((p: any) => ({ lon: p.lon, lat: p.lat, elevation: p.elevation })),
+      start: d.start,
+      path: d.path,
       speed: d.speed,
       height: d.height
     }));
@@ -229,6 +240,7 @@ export class TimelineComponent implements OnInit {
     const hours = Math.floor((totalSeconds % (24 * 3600)) / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const secs = totalSeconds % 60;
+
     let parts = [];
     if (days > 0) parts.push(`${days}d`);
     if (hours > 0 || days > 0) parts.push(`${hours}h`);
@@ -236,7 +248,5 @@ export class TimelineComponent implements OnInit {
     parts.push(`${secs}s`);
 
     return parts.join(' ');
-    }
+  }
 }
-
-
