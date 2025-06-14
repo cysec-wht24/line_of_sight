@@ -88,7 +88,16 @@ export class TimelineComponent implements OnInit {
     return result;
   }
 
-  getSpeedFactor(angle: number): number {
+  getSpeedFactorUphill(angle: number): number {
+    if (angle >= 45) return 0;
+    if (angle > 40) return 0.4;
+    if (angle > 30) return 0.5;
+    if (angle > 20) return 0.6;
+    if (angle > 10) return 0.7;
+    return 0.4;
+  }
+
+  getSpeedFactorDownhill(angle: number): number {
     if (angle >= 45) return 0;
     if (angle > 40) return 0.7;
     if (angle > 30) return 0.6;
@@ -132,7 +141,13 @@ export class TimelineComponent implements OnInit {
 
           const elevationDiff = elevationEnd - lastElevation;
           const angle = Math.abs(Math.atan2(elevationDiff, segmentDistance) * 180 / Math.PI);
-          const factor = this.getSpeedFactor(angle);
+
+          let factor: number;
+          if (elevationDiff >= 0) {
+            factor = this.getSpeedFactorUphill(angle);
+          } else {
+            factor = this.getSpeedFactorDownhill(angle);
+          }
 
           console.log(`Segment Distance: ${segmentDistance} meters, Elevation Diff: ${elevationDiff}, Angle: ${angle}`);
 
