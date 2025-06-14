@@ -11,7 +11,7 @@ export class SelectInitialPointsComponent {
 
   selectedPoints: any[] = [];
 
-  // Later: You will receive point data from the map
+  // Don't remember why this exists, but it does
   addPoint(point: any) {
     this.selectedPoints.push(point);
   }

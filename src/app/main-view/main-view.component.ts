@@ -79,7 +79,7 @@ export class MainViewComponent {
 
   onPointReset() {
     this.selectedPoint = null; // Clear current selection
-    this.confirmedPoints = []; // 👈 Clears all previously confirmed points
+    this.confirmedPoints = []; // Clears all previously confirmed points
   }
 }
 
