@@ -1,6 +1,5 @@
-import { Component, Output, EventEmitter, Input, OnInit, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Output, EventEmitter, Input, OnInit } from '@angular/core';
 
-// Input structure coming from Sidebar
 interface PointData {
   start: { lon: number; lat: number };
   path: { lon: number; lat: number }[];
@@ -8,7 +7,6 @@ interface PointData {
   height: number;
 }
 
-// Internal simulation structures
 interface SimulatedPathPoint {
   lon: number;
   lat: number;
@@ -27,7 +25,7 @@ interface SimulatedPoint {
   templateUrl: './timeline.component.html',
   styleUrls: ['./timeline.component.css']
 })
-export class TimelineComponent implements OnInit{
+export class TimelineComponent implements OnInit {
 
   @Output() positionsChanged = new EventEmitter<{ lon: number, lat: number, id: number }[]>();
 
@@ -42,15 +40,12 @@ export class TimelineComponent implements OnInit{
   simulation: SimulatedPoint[] = [];
   currentTime: number = 0;
   maxTime: number = 0;
-  readonly segmentLength: number = 10;  // meters
+  readonly segmentLength: number = 10;
 
-   ngOnInit(): void {
-    // (optional: you can leave it empty if you have no initialization code yet)
-  }
+  ngOnInit(): void {}
 
   getElevation(lon: number, lat: number): number {
     const epsilon = 1e-8;
-
     const minLon = this.tiepointX;
     const maxLon = this.tiepointX + (this.width - 1) * this.pixelSizeX;
     const maxLat = this.tiepointY;
@@ -76,14 +71,13 @@ export class TimelineComponent implements OnInit{
     const toRad = (deg: number) => deg * (Math.PI / 180);
     const dLat = toRad(lat2 - lat1);
     const dLon = toRad(lon2 - lon1);
-    const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2)**2;
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   }
 
-  interpolatePoints(p1: {lon:number, lat:number}, p2: {lon:number, lat:number}, distance: number, segmentLength: number): {lon:number, lat:number}[] {
+  interpolatePoints(p1: { lon: number, lat: number }, p2: { lon: number, lat: number }, distance: number, segmentLength: number): { lon: number, lat: number }[] {
     const segments = Math.ceil(distance / segmentLength);
-    const result: {lon:number, lat:number}[] = [];
-
+    const result: { lon: number, lat: number }[] = [];
     for (let i = 1; i <= segments; i++) {
       const t = i / segments;
       result.push({
@@ -95,7 +89,7 @@ export class TimelineComponent implements OnInit{
   }
 
   getSpeedFactor(angle: number): number {
-    if (angle >= 45) return 0; // stop condition
+    if (angle >= 45) return 0;
     if (angle > 40) return 0.7;
     if (angle > 30) return 0.6;
     if (angle > 20) return 0.5;
@@ -106,13 +100,15 @@ export class TimelineComponent implements OnInit{
   simulateMovement(details: PointData[]): SimulatedPoint[] {
     const result: SimulatedPoint[] = [];
 
+    console.log(`Simulating movement for ${details.length} points`);
+
     details.forEach((point, idx) => {
+      console.log(`--- Simulating Point ${idx} ---`);
       let timeOffset = 0;
       let stopped = false;
       let prev = point.start;
 
       const elevationStart = this.getElevation(prev.lon, prev.lat) + point.height;
-
       const simPath: SimulatedPathPoint[] = [{
         lon: prev.lon,
         lat: prev.lat,
@@ -121,13 +117,11 @@ export class TimelineComponent implements OnInit{
       }];
 
       let lastElevation = elevationStart;
-
       const fullPath = [point.start, ...point.path];
 
       for (let i = 0; i < fullPath.length - 1; i++) {
         const start = fullPath[i];
         const end = fullPath[i + 1];
-
         const distance = this.haversine(start.lat, start.lon, end.lat, end.lon);
         const segments = this.interpolatePoints(start, end, distance, this.segmentLength);
         let segmentStart = start;
@@ -140,7 +134,10 @@ export class TimelineComponent implements OnInit{
           const angle = Math.abs(Math.atan2(elevationDiff, segmentDistance) * 180 / Math.PI);
           const factor = this.getSpeedFactor(angle);
 
+          console.log(`Segment Distance: ${segmentDistance} meters, Elevation Diff: ${elevationDiff}, Angle: ${angle}`);
+
           if (factor === 0) {
+            console.log(`Stopping Point ${idx} due to slope`);
             stopped = true;
             simPath.push({
               lon: segmentStart.lon,
@@ -169,6 +166,8 @@ export class TimelineComponent implements OnInit{
         if (stopped) break;
       }
 
+      console.log(`Total time for Point ${idx}: ${timeOffset} seconds`);
+
       result.push({
         id: idx,
         path: simPath,
@@ -190,7 +189,15 @@ export class TimelineComponent implements OnInit{
     console.log('Starting simulation with details:', parsedDetails);
 
     this.simulation = this.simulateMovement(parsedDetails);
-    this.maxTime = Math.max(...this.simulation.flatMap(p => p.path.map(pt => pt.timeOffset)));
+    console.log('Simulation complete:', this.simulation);
+
+    if (this.simulation.length === 0) {
+      console.warn("No points simulated.");
+      this.maxTime = 0;
+    } else {
+      this.maxTime = Math.max(...this.simulation.flatMap(p => p.path.map(pt => pt.timeOffset)));
+    }
+
     this.currentTime = 0;
     this.emitPositions();
   }
@@ -208,24 +215,13 @@ export class TimelineComponent implements OnInit{
         const prev = point.path[idx - 1];
         const next = point.path[idx];
         let t = (this.currentTime - prev.timeOffset) / (next.timeOffset - prev.timeOffset);
-        
-        // CLAMP t to [0, 1] to avoid floating point drifts
         const clampedT = Math.min(Math.max(t, 0), 1);
-
-        // Debug logs
-        console.log(`Prev timeOffset: ${prev.timeOffset}, Next timeOffset: ${next.timeOffset}`);
-        console.log(`Raw t: ${t}, Clamped t: ${clampedT}`);
-
         const interpolatedLon = prev.lon + (next.lon - prev.lon) * clampedT;
         const interpolatedLat = prev.lat + (next.lat - prev.lat) * clampedT;
 
         console.log(`Interpolated Position - ID ${point.id}: Lon ${interpolatedLon}, Lat ${interpolatedLat}`);
 
-        return {
-          lon: interpolatedLon,
-          lat: interpolatedLat,
-          id: point.id
-        };
+        return { lon: interpolatedLon, lat: interpolatedLat, id: point.id };
       }
     });
   }
@@ -254,5 +250,6 @@ export class TimelineComponent implements OnInit{
     return parts.join(' ');
   }
 }
+
 
 
