@@ -10,6 +10,8 @@ export class SidebarComponent {
   @Input() confirmedPoints: { lat: number; lon: number; elevation: number }[] = [];
   @Input() definePathMode: boolean = false;
 
+  // @Output() done = new EventEmitter<void>();
+  // @Output() redo = new EventEmitter<void>();
   @Output() pointConfirmed = new EventEmitter<{ lat: number; lon: number; elevation: number }>();
   @Output() pointReset = new EventEmitter<void>();
   @Output() selectionModeChanged = new EventEmitter<boolean>();
@@ -231,11 +233,13 @@ export class SidebarComponent {
 
   confirmPoint() {
     if (this.selectedPoint) {
+      console.log("console log of sidebar.component.ts has been run for confirmPoint");
       this.pointConfirmed.emit(this.selectedPoint);
     }
   }
 
   resetPoint() {
+    console.log("console log of sidebar.component.ts has been run for resetPoint");
     this.pointReset.emit();
   }
 }
