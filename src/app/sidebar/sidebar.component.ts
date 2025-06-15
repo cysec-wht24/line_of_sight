@@ -37,7 +37,7 @@ export class SidebarComponent {
     const cmd = this.commandInput.trim();
     this.message = ''; // Clear any previous message
 
-    if (cmd === 'select-initial') {
+    if (cmd === 'select-first') {
       this.selectionMode = true;
       this.selectionModeChanged.emit(true);
       this.defineSpecMode = false;
@@ -89,7 +89,7 @@ export class SidebarComponent {
     }
   }
 
-  // Add this helper method to your class:
+  
   getAllDetails(): string {
     let msg = '';
     msg += `Confirmed Points:\n`;
