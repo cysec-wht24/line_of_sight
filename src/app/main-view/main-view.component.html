@@ -1,5 +1,5 @@
-<div class="flex flex-row h-full">
-  <div class="w-1/4">
+<div class="main-container">
+  <div class="sidebar-container">
     <app-sidebar
       [selectedPoint]="selectedPoint"
       [confirmedPoints]="confirmedPoints"
@@ -10,14 +10,13 @@
       (definePathModeChanged)="onDefinePathModeChanged($event)"
       (pathsChanged)="onPathsChanged($event)"
       (confirmDetailsFinalized)="onConfirmDetailsFinalized($event)"
-    >
-    </app-sidebar>
+    ></app-sidebar>
   </div>
 
-  <div class="flex flex-col flex-1 p-4 gap-4">
-    <div class="flex-grow bg-zinc-600 text-white flex items-center justify-center rounded-md">
+  <div class="content-container">
+    <div class="dem-display-wrapper">
       <app-dem-display
-        class="w-full h-full"
+        class="dem-display"
         [confirmedPoints]="confirmedPoints"
         [selectionMode]="selectionMode"
         (pointSelected)="onPointSelected($event)"
@@ -29,9 +28,9 @@
         [movingPoints]="movingPoints"
       ></app-dem-display>
     </div>
-    <div class="h-20 flex items-center justify-center rounded-md"> 
+    <div class="timeline-wrapper">
       <app-timeline
-        class="w-full"
+        class="timeline"
         [rasterData]="rasterData"
         [width]="width"
         [height]="height"
@@ -44,4 +43,5 @@
     </div>
   </div>
 </div>
+
 

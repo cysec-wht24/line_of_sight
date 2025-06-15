@@ -1,0 +1,20 @@
+.time-slider-container {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-left: 1rem;  /* Tailwind px-4 = 1rem left/right */
+  padding-right: 1rem;
+  padding-top: 0.5rem; /* Tailwind py-2 = 0.5rem top/bottom */
+  padding-bottom: 0.5rem;
+}
+
+.time-slider {
+  width: 100%;
+  max-width: 48rem; /* Tailwind max-w-3xl = 768px */
+}
+
+.time-label {
+  margin-left: 1rem;  /* Tailwind ml-4 = 1rem */
+  white-space: nowrap; /* Tailwind whitespace-nowrap */
+}

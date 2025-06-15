@@ -1,12 +1,12 @@
-<div class="w-full flex items-center justify-center px-4 py-2">
+<div class="time-slider-container">
   <input
     type="range"
-    class="range w-full max-w-3xl"
+    class="time-slider"
     min="0"
     [max]="maxTime"
     step="0.01"
     [(ngModel)]="currentTime"
     (input)="onTimeChange()"
   />
-  <span class="ml-4 whitespace-nowrap">{{ formatTime(currentTime) }} / {{ formatTime(maxTime) }}</span>
+  <span class="time-label">{{ formatTime(currentTime) }} / {{ formatTime(maxTime) }}</span>
 </div>

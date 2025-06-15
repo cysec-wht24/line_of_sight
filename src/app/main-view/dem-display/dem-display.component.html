@@ -1,7 +1,7 @@
-<div class="relative w-full h-full">
+<div class="container">
   <canvas
     #demCanvas
-    class="w-full h-full block"
+    class="canvas"
     (mousemove)="onMouseMove($event)"
     (mouseleave)="onMouseLeave()"
     (click)="onCanvasClick($event)">
@@ -9,7 +9,7 @@
 
   <div
     *ngIf="hoverInfo.visible"
-    class="absolute bg-black text-white text-xs p-2 rounded pointer-events-none"
+    class="hover-box"
     [style.left.px]="hoverInfo.x + 10"
     [style.top.px]="hoverInfo.y + 10"
   >
