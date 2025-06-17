@@ -10,24 +10,21 @@ export class SidebarComponent {
   @Input() confirmedPoints: { lat: number; lon: number; elevation: number }[] = [];
   @Input() definePathMode: boolean = false;
 
-  // @Output() done = new EventEmitter<void>();
-  // @Output() redo = new EventEmitter<void>();
   @Output() pointConfirmed = new EventEmitter<{ lat: number; lon: number; elevation: number }>();
   @Output() pointReset = new EventEmitter<void>();
   @Output() selectionModeChanged = new EventEmitter<boolean>();
   @Output() definePathModeChanged = new EventEmitter<boolean>();
   @Output() pathsChanged = new EventEmitter<any>();
   @Output() confirmDetailsFinalized = new EventEmitter<any>();
- 
+
   message: string = '';
   commandInput: string = '';
   selectionMode: boolean = false;
   defineSpecMode: boolean = false;
   currentSpecIndex: number = 0;
-  specInputs: { speed: number; height: number }[] = [];
+  specInputs: { speed: number }[] = [];
   specSpeed: string = '';
-  specHeight: string = '';
-   // Path state
+
   currentPathIndex: number = 0;
   paths: Array<{
     start: { lat: number; lon: number; elevation: number };
@@ -37,9 +34,9 @@ export class SidebarComponent {
 
   processCommand() {
     const cmd = this.commandInput.trim();
-    this.message = ''; // Clear any previous message
+    this.message = '';
 
-    if (cmd === 'select-first') {
+    if (cmd === 'select') {
       this.selectionMode = true;
       this.selectionModeChanged.emit(true);
       this.defineSpecMode = false;
@@ -47,7 +44,7 @@ export class SidebarComponent {
         this.definePathMode = false;
         this.definePathModeChanged.emit(false);
       }
-    } else if (cmd === 'define-spec') {
+    } else if (cmd === 'def-spec') {
       this.selectionMode = false;
       this.selectionModeChanged.emit(false);
       this.defineSpecMode = true;
@@ -56,10 +53,9 @@ export class SidebarComponent {
         this.definePathModeChanged.emit(false);
       }
       this.currentSpecIndex = 0;
-      this.specInputs = this.confirmedPoints.map(() => ({ speed: 0, height: 0 }));
+      this.specInputs = this.confirmedPoints.map(() => ({ speed: 0 }));
       this.specSpeed = '';
-      this.specHeight = '';
-    } else if (cmd === 'define-path') {
+    } else if (cmd === 'def-path') {
       this.selectionMode = false;
       this.selectionModeChanged.emit(false);
       this.defineSpecMode = false;
@@ -71,7 +67,7 @@ export class SidebarComponent {
         path: []
       }));
       this.currentPath = [];
-    } else if (cmd === 'confirm-details') {
+    } else if (cmd === 'confirm') {
       this.selectionMode = false;
       this.selectionModeChanged.emit(false);
       this.defineSpecMode = false;
@@ -91,7 +87,6 @@ export class SidebarComponent {
     }
   }
 
-  
   getAllDetails(): string {
     let msg = '';
     msg += `Confirmed Points:\n`;
@@ -102,7 +97,7 @@ export class SidebarComponent {
     if (this.specInputs.length) {
       msg += `\nSpecs:\n`;
       this.specInputs.forEach((spec, i) => {
-        msg += `  Point ${i + 1}: speed=${spec.speed}, height=${spec.height}\n`;
+        msg += `  Point ${i + 1}: speed=${spec.speed}\n`;
       });
     }
 
@@ -118,11 +113,9 @@ export class SidebarComponent {
     return msg || 'No details available.';
   }
 
-  // Called by parent when a path point is selected on DEM
   addPathPoint(point: { lat: number; lon: number; elevation: number }) {
     if (this.definePathMode) {
       this.currentPath.push(point);
-      // Emit committed paths + in-progress path as a special property
       this.pathsChanged.emit({
         paths: [...this.paths],
         currentPath: [...this.currentPath],
@@ -152,22 +145,18 @@ export class SidebarComponent {
   }
 
   onSpecDone() {
-    if (!this.specSpeed || !this.specHeight) return;
+    if (!this.specSpeed) return;
     this.specInputs[this.currentSpecIndex] = {
-      speed: Number(this.specSpeed),
-      height: Number(this.specHeight)
+      speed: Number(this.specSpeed)
     };
     if (this.currentSpecIndex < this.confirmedPoints.length - 1) {
       this.currentSpecIndex++;
       this.specSpeed = '';
-      this.specHeight = '';
     } else {
       const result = this.confirmedPoints.map((pt, i) => ({
-      ...pt,
-      speed: this.specInputs[i].speed,
-      height: this.specInputs[i].height
-    }));
-      // All specs entered, handle as needed (emit, save, etc)
+        ...pt,
+        speed: this.specInputs[i].speed
+      }));
       this.defineSpecMode = false;
       console.log('All specs:', result);
     }
@@ -176,19 +165,15 @@ export class SidebarComponent {
   onSpecRedo() {
     if (this.currentSpecIndex > 0) {
       this.currentSpecIndex--;
-      // Load the previous values into the input fields
       const prev = this.specInputs[this.currentSpecIndex];
       this.specSpeed = prev.speed ? String(prev.speed) : '';
-      this.specHeight = prev.height ? String(prev.height) : '';
     }
   }
 
   hardReset() {
-    // Clear all state
     this.confirmedPoints = [];
     this.specInputs = [];
     this.specSpeed = '';
-    this.specHeight = '';
     this.currentSpecIndex = 0;
     this.paths = [];
     this.currentPath = [];
@@ -208,9 +193,8 @@ export class SidebarComponent {
   }
 
   onConfirmDetailsDone() {
-    // Validation: check all points have path, speed, and height
     const allHaveSpecs = this.specInputs.length === this.confirmedPoints.length &&
-      this.specInputs.every(spec => spec.speed > 0 && spec.height > 0);
+      this.specInputs.every(spec => spec.speed > 0);
     const allHavePaths = this.paths.length === this.confirmedPoints.length &&
       this.paths.every(p => Array.isArray(p.path) && p.path.length > 0);
 
@@ -219,12 +203,10 @@ export class SidebarComponent {
       return;
     }
 
-    // Prepare data to send
     const details = this.confirmedPoints.map((pt, i) => ({
       start: pt,
       path: this.paths[i].path,
-      speed: this.specInputs[i].speed,
-      height: this.specInputs[i].height
+      speed: this.specInputs[i].speed
     }));
 
     this.confirmDetailsFinalized.emit(details);
@@ -243,7 +225,6 @@ export class SidebarComponent {
     this.pointReset.emit();
   }
 }
-
 
 
 

@@ -4,7 +4,6 @@ interface PointData {
   start: { lon: number; lat: number };
   path: { lon: number; lat: number }[];
   speed: number;
-  height: number;
 }
 
 interface SimulatedPathPoint {
@@ -117,7 +116,7 @@ export class TimelineComponent implements OnInit {
       let stopped = false;
       let prev = point.start;
 
-      const elevationStart = this.getElevation(prev.lon, prev.lat) + point.height;
+      const elevationStart = this.getElevation(prev.lon, prev.lat);
       const simPath: SimulatedPathPoint[] = [{
         lon: prev.lon,
         lat: prev.lat,
@@ -137,7 +136,7 @@ export class TimelineComponent implements OnInit {
 
         for (const segmentEnd of segments) {
           const segmentDistance = this.haversine(segmentStart.lat, segmentStart.lon, segmentEnd.lat, segmentEnd.lon);
-          const elevationEnd = this.getElevation(segmentEnd.lon, segmentEnd.lat) + point.height;
+          const elevationEnd = this.getElevation(segmentEnd.lon, segmentEnd.lat);
 
           const elevationDiff = elevationEnd - lastElevation;
           const angle = Math.abs(Math.atan2(elevationDiff, segmentDistance) * 180 / Math.PI);
@@ -197,8 +196,7 @@ export class TimelineComponent implements OnInit {
     const parsedDetails: PointData[] = details.map((d: any) => ({
       start: d.start,
       path: d.path,
-      speed: d.speed,
-      height: d.height
+      speed: d.speed
     }));
 
     console.log('Starting simulation with details:', parsedDetails);
@@ -265,3 +263,4 @@ export class TimelineComponent implements OnInit {
     return parts.join(' ');
   }
 }
+
