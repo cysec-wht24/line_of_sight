@@ -125,7 +125,7 @@ export class SidebarComponent {
     msg += `Confirmed Points:\n`;
 
     if (this.terrainSegmentSize && this.terrainValue !== null) {
-      msg += `\nTerrain:\n  Terrain Type: ${this.terrainValue}, Segment Size: ${this.terrainSegmentSize}m\n`;
+      msg += `\nTerrain:\n  Terrain Type: ${this.terrainValue}, Segment Size: ${this.terrainSegmentSize}m\n\n`;
     }
 
     this.confirmedPoints.forEach((pt, i) => {
