@@ -32,10 +32,31 @@ export class SidebarComponent {
   }> = [];
   currentPath: { lat: number; lon: number; elevation: number }[] = [];
 
+    // New: Terrain data
+  terrainValue: number | null = null;
+  terrainSegmentSize: number | null = null;
+
   processCommand() {
     const cmd = this.commandInput.trim();
     this.message = '';
 
+    // Match terrain command
+    const terrainMatch = cmd.match(/^terrain\s*(\d+)$/);
+    if (terrainMatch) {
+      const value = parseInt(terrainMatch[1], 10);
+      this.terrainValue = value;
+      this.terrainSegmentSize = this.getSegmentSize(value);
+      if (this.terrainSegmentSize) {
+        this.message = `Terrain type ${value} set with segment size ${this.terrainSegmentSize} m`;
+      } else {
+        this.message = `Invalid terrain number: ${value}`;
+        this.terrainValue = null;
+      }
+      this.commandInput = '';
+      return;
+    }
+
+    // Existing commands
     if (cmd === 'select') {
       this.selectionMode = true;
       this.selectionModeChanged.emit(true);
@@ -85,11 +106,28 @@ export class SidebarComponent {
         this.definePathModeChanged.emit(false);
       }
     }
+
+    this.commandInput = '';
+  }
+
+  // Mapping terrain input to segment size
+  getSegmentSize(num: number): number | null {
+    if (num === 1 || num === 6 || num === 7 || num === 9) return 500;
+    if ([2, 3, 4].includes(num)) return 1000;
+    if (num === 5) return 250;
+    if (num === 8) return 100;
+    if (num === 10) return 3000;
+    return null;
   }
 
   getAllDetails(): string {
     let msg = '';
     msg += `Confirmed Points:\n`;
+
+    if (this.terrainSegmentSize && this.terrainValue !== null) {
+      msg += `\nTerrain:\n  Terrain Type: ${this.terrainValue}, Segment Size: ${this.terrainSegmentSize}m\n`;
+    }
+
     this.confirmedPoints.forEach((pt, i) => {
       msg += `  ${i + 1}: lat=${pt.lat}, lon=${pt.lon}, elev=${pt.elevation}\n`;
     });
@@ -110,6 +148,7 @@ export class SidebarComponent {
         });
       });
     }
+
     return msg || 'No details available.';
   }
 
