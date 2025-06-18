@@ -29,9 +29,14 @@ export class MainViewComponent {
     }));
   }
 
-  onConfirmDetailsFinalized(details: any) {
+  onConfirmDetailsFinalized(event: { segmentSize: number, details: any[] }) {
+    console.log("✅ Finalized details received in main-view:", event);
+
     if (this.timeline) {
-      this.timeline.startSimulation(details);
+      this.timeline.startSimulation({
+        segmentSize: event.segmentSize,
+        details: event.details
+      });
     }
   }
 

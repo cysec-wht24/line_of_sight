@@ -30,11 +30,12 @@ export class TimelineComponent implements OnInit {
   constructor(private demDataService: DemDataService) {}
 
   @Output() positionsChanged = new EventEmitter<{ lon: number, lat: number, id: number }[]>();
+  @Input() segmentLength: number = 10;
 
   simulation: SimulatedPoint[] = [];
   currentTime: number = 0;
   maxTime: number = 0;
-  readonly segmentLength: number = 10;
+  
 
   ngOnInit(): void {}
 
@@ -90,6 +91,7 @@ export class TimelineComponent implements OnInit {
   }
 
   interpolatePoints(p1: { lon: number, lat: number }, p2: { lon: number, lat: number }, distance: number, segmentLength: number): { lon: number, lat: number }[] {
+    console.log(`Interpolating points from (${p1.lon}, ${p1.lat}) to (${p2.lon}, ${p2.lat}) over distance ${distance} with segment length ${segmentLength}`);
     const segments = Math.ceil(distance / segmentLength);
     const result: { lon: number, lat: number }[] = [];
     for (let i = 1; i <= segments; i++) {
@@ -141,6 +143,7 @@ export class TimelineComponent implements OnInit {
 
       let lastElevation = elevationStart;
       const fullPath = [point.start, ...point.path];
+      console.log("segmentLength is: ", this.segmentLength , "m");
 
       for (let i = 0; i < fullPath.length - 1; i++) {
         const start = fullPath[i];
@@ -207,20 +210,39 @@ export class TimelineComponent implements OnInit {
     return result;
   }
 
-  startSimulation(details: any) {
-    const parsedDetails: PointData[] = details.map((d: any) => ({
-      start: d.start,
-      path: d.path,
-      speed: d.speed
-    }));
+  startSimulation(input: PointData[] | { details: PointData[], segmentSize: number }) {
 
-    console.log('Starting simulation with details:', parsedDetails);
+    // this.simulation = [];
+    // this.currentTime = 0;
+    // this.maxTime = 0;
 
-    this.simulation = this.simulateMovement(parsedDetails);
-    console.log('Simulation complete:', this.simulation);
+    console.log('🔄 Starting simulation with input:', input);
+
+    let details: PointData[] = [];
+    let segmentSize = this.segmentLength;
+
+    if (input && typeof input === 'object' && 'details' in input && 'segmentSize' in input) {
+      details = input.details;
+      segmentSize = input.segmentSize;
+    } else if (Array.isArray(input)) {
+      details = input;
+    } else {
+      console.warn("⚠️ Invalid simulation input format:", input);
+      return;
+    }
+
+    this.segmentLength = segmentSize;
+
+    console.log('🚀 Starting simulation with:', {
+      segmentLength: this.segmentLength,
+      details
+    });
+
+    this.simulation = this.simulateMovement(details);
+    console.log('✅ Simulation complete:', this.simulation);
 
     if (this.simulation.length === 0) {
-      console.warn("No points simulated.");
+      console.warn("⚠️ No points simulated.");
       this.maxTime = 0;
     } else {
       this.maxTime = Math.max(...this.simulation.flatMap(p => p.path.map(pt => pt.timeOffset)));
