@@ -248,7 +248,12 @@ export class SidebarComponent {
       speed: this.specInputs[i].speed
     }));
 
-    this.confirmDetailsFinalized.emit(details);
+    // ✅ Emit everything together
+    this.confirmDetailsFinalized.emit({
+      segmentSize: this.terrainSegmentSize,
+      details
+    });
+
     this.message = '';
   }
 
