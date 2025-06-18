@@ -159,7 +159,10 @@ export class TimelineComponent implements OnInit {
           const elevationEnd = this.getElevation(segmentEnd.lon, segmentEnd.lat);
 
           const elevationDiff = elevationEnd - lastElevation;
+          console.log(`elevationEnd: ${elevationEnd}, lastElevation: ${lastElevation}, elevaionDiff: ${elevationDiff}`);
+          console.log("ElevationDiff: ", elevationDiff);
           const angle = Math.abs(Math.atan2(elevationDiff, segmentDistance) * 180 / Math.PI);
+          console.log("angle: ", angle);
 
           let factor: number;
           if (elevationDiff >= 0) {
