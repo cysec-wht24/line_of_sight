@@ -11,6 +11,7 @@ import {
   SimpleChanges, 
 } from '@angular/core';
 import { fromArrayBuffer } from 'geotiff';
+import { DemDataService } from 'src/app/services/dem-data.service';
 
 @Component({
   selector: 'app-dem-display',
@@ -18,6 +19,8 @@ import { fromArrayBuffer } from 'geotiff';
   styleUrls: ['./dem-display.component.css']
 })
 export class DemDisplayComponent implements AfterViewInit, OnChanges {
+
+  constructor(private demDataService: DemDataService) {}
 
   @ViewChild('demCanvas', { static: false }) canvasRef!: ElementRef<HTMLCanvasElement>;
   
@@ -223,6 +226,15 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
       if (val < this.minElevation) this.minElevation = val;
       if (val > this.maxElevation) this.maxElevation = val;
     }
+
+    // 🟩 Store the values in the shared service
+    this.demDataService.rasterData = Array.from(this.rasterData);
+    this.demDataService.width = this.width;
+    this.demDataService.height = this.height;
+    this.demDataService.tiepointX = this.tiepointX;
+    this.demDataService.tiepointY = this.tiepointY;
+    this.demDataService.pixelSizeX = this.pixelSizeX;
+    this.demDataService.pixelSizeY = this.pixelSizeY;
 
     console.log('DEM loaded:');
     console.log('  tiepointX:', this.tiepointX, 'tiepointY:', this.tiepointY);

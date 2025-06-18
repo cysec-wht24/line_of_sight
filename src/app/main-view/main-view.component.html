@@ -31,13 +31,6 @@
     <div class="timeline-wrapper">
       <app-timeline
         class="timeline"
-        [rasterData]="rasterData"
-        [width]="width"
-        [height]="height"
-        [tiepointX]="tiepointX"
-        [tiepointY]="tiepointY"
-        [pixelSizeX]="pixelSizeX"
-        [pixelSizeY]="pixelSizeY"
         (positionsChanged)="onPositionsChanged($event)"
       ></app-timeline>
     </div>

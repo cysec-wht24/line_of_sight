@@ -18,13 +18,6 @@ export class MainViewComponent {
   paths: any[] = [];
   currentPath: any[] = [];
   currentPathIndex: number = 0;
-  rasterData: number[] = [];
-  width: number = 0;
-  height: number = 0;
-  tiepointX: number = 0;
-  tiepointY: number = 0;
-  pixelSizeX: number = 1;
-  pixelSizeY: number = 1;
 
   constructor(private cdr: ChangeDetectorRef) {}
 

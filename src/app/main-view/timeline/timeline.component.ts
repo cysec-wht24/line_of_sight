@@ -1,4 +1,5 @@
 import { Component, Output, EventEmitter, Input, OnInit } from '@angular/core';
+import { DemDataService } from 'src/app/services/dem-data.service';
 
 interface PointData {
   start: { lon: number; lat: number };
@@ -26,15 +27,9 @@ interface SimulatedPoint {
 })
 export class TimelineComponent implements OnInit {
 
-  @Output() positionsChanged = new EventEmitter<{ lon: number, lat: number, id: number }[]>();
+  constructor(private demDataService: DemDataService) {}
 
-  @Input() rasterData: number[] = [];
-  @Input() width: number = 0;
-  @Input() height: number = 0;
-  @Input() tiepointX: number = 0;
-  @Input() tiepointY: number = 0;
-  @Input() pixelSizeX: number = 1;
-  @Input() pixelSizeY: number = 1;
+  @Output() positionsChanged = new EventEmitter<{ lon: number, lat: number, id: number }[]>();
 
   simulation: SimulatedPoint[] = [];
   currentTime: number = 0;
@@ -45,24 +40,44 @@ export class TimelineComponent implements OnInit {
 
   getElevation(lon: number, lat: number): number {
     const epsilon = 1e-8;
-    const minLon = this.tiepointX;
-    const maxLon = this.tiepointX + (this.width - 1) * this.pixelSizeX;
-    const maxLat = this.tiepointY;
-    const minLat = this.tiepointY - (this.height - 1) * this.pixelSizeY;
+    const {
+      rasterData,
+      width,
+      height,
+      tiepointX,
+      tiepointY,
+      pixelSizeX,
+      pixelSizeY,
+    } = this.demDataService;
+
+    console.log(`Getting elevation for lon: ${lon}, lat: ${lat}`);
+    console.log("tiepointX:", tiepointX, "tiepointY:", tiepointY);
+    console.log("pixelSizeX:", pixelSizeX, "pixelSizeY:", pixelSizeY);
+    console.log("width:", width, "height:", height);
+
+    const minLon = tiepointX;
+    const maxLon = tiepointX + (width - 1) * pixelSizeX;
+    const maxLat = tiepointY;
+    const minLat = tiepointY - (height - 1) * pixelSizeY;
 
     const clampedLon = Math.min(Math.max(lon, minLon - epsilon), maxLon + epsilon);
     const clampedLat = Math.min(Math.max(lat, minLat - epsilon), maxLat + epsilon);
 
-    const col = Math.floor((clampedLon - this.tiepointX) / this.pixelSizeX);
-    const row = Math.floor((this.tiepointY - clampedLat) / this.pixelSizeY);
+    const col = Math.floor((clampedLon - tiepointX) / pixelSizeX);
+    const row = Math.floor((tiepointY - clampedLat) / pixelSizeY);
 
-    if (col < 0 || col >= this.width || row < 0 || row >= this.height) {
+    console.log(`minLon ${minLon}, maxLon ${maxLon}, minLat ${minLat}, maxLat ${maxLat}`);
+    console.log(`clampedLon ${clampedLon}, clampedLat ${clampedLat}`);
+    console.log(`row ${row}, col ${col}`);
+
+    if (col < 0 || col >= width || row < 0 || row >= height) {
       console.warn(`Out of bounds DEM sampling at (${lon}, ${lat})`);
-      return 0;
+      return NaN; // Return NaN for out of bounds
     }
 
-    const index = row * this.width + col;
-    return this.rasterData[index];
+    const index = row * width + col;
+    console.log(`Elevation at index ${index}: ${rasterData[index]}`);
+    return rasterData[index];
   }
 
   haversine(lat1: number, lon1: number, lat2: number, lon2: number): number {
