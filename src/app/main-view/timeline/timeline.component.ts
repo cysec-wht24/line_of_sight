@@ -93,7 +93,7 @@ export class TimelineComponent implements OnInit {
     if (angle > 30) return 0.5;
     if (angle > 20) return 0.6;
     if (angle > 10) return 0.7;
-    return 0.4;
+    return 0.4; // remove this function, fix the effective speed operation
   }
 
   getSpeedFactorDownhill(angle: number): number {
@@ -106,12 +106,12 @@ export class TimelineComponent implements OnInit {
   }
 
   simulateMovement(details: PointData[]): SimulatedPoint[] {
-    const result: SimulatedPoint[] = [];
+    const result: SimulatedPoint[] = [];//initialize result array
 
     console.log(`Simulating movement for ${details.length} points`);
 
     details.forEach((point, idx) => {
-      console.log(`--- Simulating Point ${idx} ---`);
+      console.log(`--- Simulating Point ${idx} ---`); // ONe point at a time
       let timeOffset = 0;
       let stopped = false;
       let prev = point.start;
