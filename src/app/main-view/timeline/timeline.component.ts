@@ -51,10 +51,10 @@ export class TimelineComponent implements OnInit {
       pixelSizeY,
     } = this.demDataService;
 
-    console.log(`Getting elevation for lon: ${lon}, lat: ${lat}`);
-    console.log("tiepointX:", tiepointX, "tiepointY:", tiepointY);
-    console.log("pixelSizeX:", pixelSizeX, "pixelSizeY:", pixelSizeY);
-    console.log("width:", width, "height:", height);
+    // console.log(`Getting elevation for lon: ${lon}, lat: ${lat}`);
+    // console.log("tiepointX:", tiepointX, "tiepointY:", tiepointY);
+    // console.log("pixelSizeX:", pixelSizeX, "pixelSizeY:", pixelSizeY);
+    // console.log("width:", width, "height:", height);
 
     const minLon = tiepointX;
     const maxLon = tiepointX + (width - 1) * pixelSizeX;
@@ -105,6 +105,7 @@ export class TimelineComponent implements OnInit {
   }
 
   getSpeedFactorUphill(angle: number): number {
+    console.log(`Calculating speed factor for uphill angle: ${angle}`);
     if (angle >= 45) return 0;
     if (angle > 40) return 0.4;
     if (angle > 30) return 0.5;
@@ -114,6 +115,7 @@ export class TimelineComponent implements OnInit {
   }
 
   getSpeedFactorDownhill(angle: number): number {
+    console.log(`Calculating speed factor for downhill angle: ${angle}`);
     if (angle >= 45) return 0;
     if (angle > 40) return 0.7;
     if (angle > 30) return 0.6;
@@ -125,10 +127,10 @@ export class TimelineComponent implements OnInit {
   simulateMovement(details: PointData[]): SimulatedPoint[] {
     const result: SimulatedPoint[] = [];//initialize result array
 
-    console.log(`Simulating movement for ${details.length} points`);
+    //console.log(`Simulating movement for ${details.length} points`);
 
     details.forEach((point, idx) => {
-      console.log(`--- Simulating Point ${idx} ---`); // ONe point at a time
+      //console.log(`--- Simulating Point ${idx} ---`); // ONe point at a time
       let timeOffset = 0;
       let stopped = false;
       let prev = point.start;
@@ -143,7 +145,7 @@ export class TimelineComponent implements OnInit {
 
       let lastElevation = elevationStart;
       const fullPath = [point.start, ...point.path];
-      console.log("segmentLength is: ", this.segmentLength , "m");
+      //console.log("segmentLength is: ", this.segmentLength , "m");
 
       for (let i = 0; i < fullPath.length - 1; i++) {
         const start = fullPath[i];
@@ -216,7 +218,7 @@ export class TimelineComponent implements OnInit {
     // this.currentTime = 0;
     // this.maxTime = 0;
 
-    console.log('🔄 Starting simulation with input:', input);
+    //console.log('🔄 Starting simulation with input:', input);
 
     let details: PointData[] = [];
     let segmentSize = this.segmentLength;
@@ -233,10 +235,10 @@ export class TimelineComponent implements OnInit {
 
     this.segmentLength = segmentSize;
 
-    console.log('🚀 Starting simulation with:', {
-      segmentLength: this.segmentLength,
-      details
-    });
+    // console.log('🚀 Starting simulation with:', {
+    //   segmentLength: this.segmentLength,
+    //   details
+    // });
 
     this.simulation = this.simulateMovement(details);
     console.log('✅ Simulation complete:', this.simulation);
@@ -269,7 +271,7 @@ export class TimelineComponent implements OnInit {
         const interpolatedLon = prev.lon + (next.lon - prev.lon) * clampedT;
         const interpolatedLat = prev.lat + (next.lat - prev.lat) * clampedT;
 
-        console.log(`Interpolated Position - ID ${point.id}: Lon ${interpolatedLon}, Lat ${interpolatedLat}`);
+        // console.log(`Interpolated Position - ID ${point.id}: Lon ${interpolatedLon}, Lat ${interpolatedLat}`);
 
         return { lon: interpolatedLon, lat: interpolatedLat, id: point.id };
       }
