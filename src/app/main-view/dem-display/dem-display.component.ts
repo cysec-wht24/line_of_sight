@@ -195,39 +195,67 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
   }
 
   private async loadDEM() {
-    const response = await fetch('assets/dem.tif');
+    const response = await fetch('assets/n25_e077_1arc_v3.dt2');
     const arrayBuffer = await response.arrayBuffer();
-    const tiff = await fromArrayBuffer(arrayBuffer);
-    const image = await tiff.getImage();
-    this.width = image.getWidth();
-    this.height = image.getHeight();
-    const geoKeys = image.getGeoKeys();
-    console.log("geoKeys are ", geoKeys);
+    console.log('[DTED] Fetched array buffer of size:', arrayBuffer.byteLength);
 
+    const dataView = new DataView(arrayBuffer);
 
-    this.rasterData = await image.readRasters({ interleave: true }) as Float32Array;
-    //console.log(this.rasterData);
+    const HEADER_SIZE = 3428; // DTED2 file header size
+    const LAT_POINTS = 3601;  // Number of rows
+    const LON_POINTS = 3601;  // Number of columns
+    const COLUMN_SIZE = 8 + LAT_POINTS * 2 + 4; // Header + data + checksum = 8 + 7202 + 4 = 7214 bytes per column
 
-    // 🆕 Extract tiepoint and pixel scale for geo conversion
-    const tiepoint = image.getTiePoints()[0];
-    const fileDirectory = image.getFileDirectory();
-    const pixelScale = fileDirectory.ModelPixelScale;
+    // Sanity check
+    const expectedSize = HEADER_SIZE + LON_POINTS * COLUMN_SIZE;
+    console.log('[DTED] Expected buffer size:', expectedSize);
+    if (arrayBuffer.byteLength < expectedSize) {
+      console.error('[DTED] DTED file is too small or corrupted.');
+      return;
+    }
 
-    this.tiepointX = tiepoint.x;
-    this.tiepointY = tiepoint.y;
-    this.pixelSizeX = pixelScale[0];
-    this.pixelSizeY = pixelScale[1];
+    const elevationData = new Float32Array(LAT_POINTS * LON_POINTS);
+    console.log('[DTED] Starting elevation extraction...');
 
+    let offset = HEADER_SIZE;
+    for (let col = 0; col < LON_POINTS; col++) {
+      const columnStart = offset + col * COLUMN_SIZE + 8; // Skip 8-byte header
+      for (let row = 0; row < LAT_POINTS; row++) {
+        const index = row * LON_POINTS + col;
+        const valOffset = columnStart + row * 2;
+        const elevation = dataView.getInt16(valOffset, false); // big-endian
+        elevationData[index] = elevation;
+      }
+      if (col % 600 === 0) console.log(`[DTED] Processed column ${col}/${LON_POINTS}`);
+    }
+
+    this.width = LON_POINTS;
+    this.height = LAT_POINTS;
+    this.rasterData = elevationData;
+
+    // Use filename to infer base coordinate
+    this.tiepointX = 77;  // Longitude
+    console.log('[DTED] Tiepoint X:', this.tiepointX);
+    this.tiepointY = 26;  // Latitude (approx)
+    console.log('[DTED] Tiepoint Y:', this.tiepointY);
+    this.pixelSizeX = 1 / 3600;
+    console.log('[DTED] Pixel size X:', this.pixelSizeX);
+    this.pixelSizeY = 1 / 3600;
+    console.log('[DTED] Pixel size Y:', this.pixelSizeY);
+
+    // Find elevation range
     this.minElevation = Infinity;
     this.maxElevation = -Infinity;
-    for (let i = 0; i < this.rasterData.length; i++) {
-      const val = this.rasterData[i];
-      if (val === 0) continue;
+    for (let i = 0; i < elevationData.length; i++) {
+      const val = elevationData[i];
       if (val < this.minElevation) this.minElevation = val;
       if (val > this.maxElevation) this.maxElevation = val;
     }
 
-    // 🟩 Store the values in the shared service
+    console.log('[DTED] Elevation range:', this.minElevation, 'to', this.maxElevation);
+    console.log('[DTED] Resolution:', this.pixelSizeX, '° per pixel');
+
+    // Save to service
     this.demDataService.rasterData = Array.from(this.rasterData);
     this.demDataService.width = this.width;
     this.demDataService.height = this.height;
@@ -236,11 +264,7 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
     this.demDataService.pixelSizeX = this.pixelSizeX;
     this.demDataService.pixelSizeY = this.pixelSizeY;
 
-    console.log('DEM loaded:');
-    console.log('  tiepointX:', this.tiepointX, 'tiepointY:', this.tiepointY);
-    console.log('  pixelSizeX:', this.pixelSizeX, 'pixelSizeY:', this.pixelSizeY);
-    console.log('  width:', this.width, 'height:', this.height);
-    console.log('  minElevation:', this.minElevation, 'maxElevation:', this.maxElevation);
+    console.log('[DTED] DTED2 parsed successfully ✅');
   }
 
   private resizeAndRender() {
