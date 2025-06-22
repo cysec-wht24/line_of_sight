@@ -1,10 +1,8 @@
 <div class="main-container">
   <div class="sidebar-container">
     <app-sidebar
-      [selectedPoint]="selectedPoint"
-      [confirmedPoints]="confirmedPoints"
-      (pointConfirmed)="onPointConfirmed($event)"
-      (pointReset)="onPointReset()"
+      (initialPointSelected)="onInitialPointSelected($event)"
+      [(confirmedPoints)]="confirmedPoints"
       (selectionModeChanged)="onSelectionModeChanged($event)"
       [definePathMode]="definePathMode"
       (definePathModeChanged)="onDefinePathModeChanged($event)"
@@ -17,7 +15,6 @@
     <div class="dem-display-wrapper">
       <app-dem-display
         class="dem-display"
-        [confirmedPoints]="confirmedPoints"
         [selectionMode]="selectionMode"
         (pointSelected)="onPointSelected($event)"
         [definePathMode]="definePathMode"
@@ -26,8 +23,11 @@
         [currentPath]="currentPath"
         [currentPathIndex]="currentPathIndex"
         [movingPoints]="movingPoints"
+        [confirmedPoints]="confirmedPoints"
+        [initialPoints]="initialPoints"
       ></app-dem-display>
     </div>
+
     <div class="timeline-wrapper">
       <app-timeline
         class="timeline"
@@ -36,5 +36,6 @@
     </div>
   </div>
 </div>
+
 
 

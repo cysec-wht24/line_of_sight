@@ -11,13 +11,18 @@ export class MainViewComponent {
   @ViewChild(SidebarComponent) sidebar!: SidebarComponent;
   @ViewChild(TimelineComponent) timeline!: TimelineComponent;
 
-  selectedPoint: { lat: number; lon: number; elevation: number } | null = null;
-  confirmedPoints: { lat: number; lon: number; elevation: number }[] = [];
+  initialPoints: { lat: number; lon: number; elevation: number }[] = [];
+
+  confirmedPoints: any[] = [];
+
   movingPoints: { x: number, y: number, id: number }[] = [];
 
   paths: any[] = [];
   currentPath: any[] = [];
   currentPathIndex: number = 0;
+
+  selectionMode = false;
+  definePathMode = false;
 
   constructor(private cdr: ChangeDetectorRef) {}
 
@@ -27,6 +32,12 @@ export class MainViewComponent {
       y: p.lat,
       id: p.id
     }));
+  }
+
+  onInitialPointSelected(point: { lat: number; lon: number; elevation: number }) {
+     this.initialPoints = [...this.initialPoints, point];
+    // this.initialPoints.push(point);
+    // this.cdr.detectChanges(); // ensure Angular updates the view
   }
 
   onConfirmDetailsFinalized(event: { segmentSize: number, details: any[] }) {
@@ -47,11 +58,12 @@ export class MainViewComponent {
     this.cdr.detectChanges();
   }
 
-  selectionMode = false;
-  definePathMode = false;
-
   onDefinePathModeChanged(enabled: boolean) {
     this.definePathMode = enabled;
+  }
+
+  onSelectionModeChanged(enabled: boolean) {
+    this.selectionMode = enabled;
   }
 
   onPathPointSelected(point: { lat: number; lon: number; elevation: number }) {
@@ -60,24 +72,13 @@ export class MainViewComponent {
     }
   }
 
-  onSelectionModeChanged(enabled: boolean) {
-    this.selectionMode = enabled;
-  }
-  
   onPointSelected(point: { lat: number; lon: number; elevation: number }) {
-      this.selectedPoint = point;
-      
+    if (this.selectionMode) {
+      this.sidebar.onMapPointSelected(point);
+    }
   }
 
-  onPointConfirmed(point: { lat: number; lon: number; elevation: number }) {
-  this.confirmedPoints = [...this.confirmedPoints, point];
-  console.log('✅ Confirmed Points:', this.confirmedPoints);
-  this.selectedPoint = null; // Clear current so user can click next
+  
 }
 
-  onPointReset() {
-    this.selectedPoint = null; // Clear current selection
-    this.confirmedPoints = []; // Clears all previously confirmed points
-  }
-}
 

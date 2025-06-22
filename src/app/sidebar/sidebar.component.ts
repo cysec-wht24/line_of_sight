@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 
 @Component({
   selector: 'app-sidebar',
@@ -7,112 +7,52 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 })
 export class SidebarComponent {
   @Input() selectedPoint: { lat: number; lon: number; elevation: number } | null = null;
-  @Input() confirmedPoints: { lat: number; lon: number; elevation: number }[] = [];
   @Input() definePathMode: boolean = false;
+  @Input() confirmedPoints: any[] = [];
 
-  @Output() pointConfirmed = new EventEmitter<{ lat: number; lon: number; elevation: number }>();
   @Output() pointReset = new EventEmitter<void>();
   @Output() selectionModeChanged = new EventEmitter<boolean>();
   @Output() definePathModeChanged = new EventEmitter<boolean>();
   @Output() pathsChanged = new EventEmitter<any>();
   @Output() confirmDetailsFinalized = new EventEmitter<any>();
+  @Output() confirmedPointsChange = new EventEmitter<any[]>();
+  @Output() initialPointSelected = new EventEmitter<{ lat: number; lon: number; elevation: number }>();
 
+  showCard = false;
+  isOpen: boolean[] = [];
   message: string = '';
-  commandInput: string = '';
-  selectionMode: boolean = false;
-  defineSpecMode: boolean = false;
-  currentSpecIndex: number = 0;
-  specInputs: { speed: number }[] = [];
-  specSpeed: string = '';
 
-  currentPathIndex: number = 0;
+  toggleCard() {
+    this.showCard = !this.showCard;
+  }
+
+  // confirmedPoints: Array<{ lat: number; lon: number; elevation: number; speed: number }> = [];
   paths: Array<{
     start: { lat: number; lon: number; elevation: number };
     path: { lat: number; lon: number; elevation: number }[];
   }> = [];
-  currentPath: { lat: number; lon: number; elevation: number }[] = [];
 
-    // New: Terrain data
   terrainValue: number | null = null;
   terrainSegmentSize: number | null = null;
 
-  processCommand() {
-    const cmd = this.commandInput.trim();
-    this.message = '';
+  selectionMode: boolean = false;
+  addPointMode: boolean = false;
+  currentPathIndex: number = -1;
+  currentPath: { lat: number; lon: number; elevation: number }[] = [];
 
-    // Match terrain command
-    const terrainMatch = cmd.match(/^terrain\s*(\d+)$/);
-    if (terrainMatch) {
-      const value = parseInt(terrainMatch[1], 10);
-      this.terrainValue = value;
-      this.terrainSegmentSize = this.getSegmentSize(value);
-      if (this.terrainSegmentSize) {
-        this.message = `Terrain type ${value} set with segment size ${this.terrainSegmentSize} m`;
-      } else {
-        this.message = `Invalid terrain number: ${value}`;
-        this.terrainValue = null;
-      }
-      this.commandInput = '';
-      return;
-    }
+  selectedSpeed: number = 0;
 
-    // Existing commands
-    if (cmd === 'select') {
-      this.selectionMode = true;
-      this.selectionModeChanged.emit(true);
-      this.defineSpecMode = false;
-      if (this.definePathMode) {
-        this.definePathMode = false;
-        this.definePathModeChanged.emit(false);
-      }
-    } else if (cmd === 'def-spec') {
-      this.selectionMode = false;
-      this.selectionModeChanged.emit(false);
-      this.defineSpecMode = true;
-      if (this.definePathMode) {
-        this.definePathMode = false;
-        this.definePathModeChanged.emit(false);
-      }
-      this.currentSpecIndex = 0;
-      this.specInputs = this.confirmedPoints.map(() => ({ speed: 0 }));
-      this.specSpeed = '';
-    } else if (cmd === 'def-path') {
-      this.selectionMode = false;
-      this.selectionModeChanged.emit(false);
-      this.defineSpecMode = false;
-      this.definePathMode = true;
-      this.definePathModeChanged.emit(true);
-      this.currentPathIndex = 0;
-      this.paths = this.confirmedPoints.map(pt => ({
-        start: pt,
-        path: []
-      }));
-      this.currentPath = [];
-    } else if (cmd === 'confirm') {
-      this.selectionMode = false;
-      this.selectionModeChanged.emit(false);
-      this.defineSpecMode = false;
-      if (this.definePathMode) {
-        this.definePathMode = false;
-        this.definePathModeChanged.emit(false);
-      }
-      this.message = this.getAllDetails();
-    } else {
-      this.selectionMode = false;
-      this.selectionModeChanged.emit(false);
-      this.defineSpecMode = false;
-      if (this.definePathMode) {
-        this.definePathMode = false;
-        this.definePathModeChanged.emit(false);
-      }
-    }
-
-    this.commandInput = '';
+  onTerrainChange() {
+    this.terrainSegmentSize = this.getSegmentSize(this.terrainValue ?? 0);
   }
 
-  // Mapping terrain input to segment size
+  onDeleteClick(index: number, event: MouseEvent) {
+    event.stopPropagation(); // Prevent toggling the collapse
+    this.deletePoint(index);
+  }
+
   getSegmentSize(num: number): number | null {
-    if (num === 1 || num === 6 || num === 7 || num === 9) return 500;
+    if ([1, 6, 7, 9].includes(num)) return 500;
     if ([2, 3, 4].includes(num)) return 1000;
     if (num === 5) return 250;
     if (num === 8) return 100;
@@ -120,155 +60,138 @@ export class SidebarComponent {
     return null;
   }
 
-  getAllDetails(): string {
-    let msg = '';
-    msg += `Confirmed Points:\n`;
+  startAddPoint() {
+    this.addPointMode = true;
+    this.selectionMode = true;
+    this.selectedPoint = null;
+    this.selectedSpeed = 0;
+    this.showCard = true;
+    this.message = '⚠️ Select an initial point from the map.';
+    this.selectionModeChanged.emit(true);
+  }
 
-    if (this.terrainSegmentSize && this.terrainValue !== null) {
-      msg += `\nTerrain:\n  Terrain Type: ${this.terrainValue}, Segment Size: ${this.terrainSegmentSize}m\n\n`;
-    }
+  onMapPointSelected(point: { lat: number; lon: number; elevation: number }) {
+    if (!this.addPointMode) return;
 
-    this.confirmedPoints.forEach((pt, i) => {
-      msg += `  ${i + 1}: lat=${pt.lat}, lon=${pt.lon}, elev=${pt.elevation}\n`;
-    });
+    this.selectedPoint = point;
+    this.message = ''; // Clear message after point selection
 
-    if (this.specInputs.length) {
-      msg += `\nSpecs:\n`;
-      this.specInputs.forEach((spec, i) => {
-        msg += `  Point ${i + 1}: speed=${spec.speed}\n`;
-      });
-    }
+    // ✅ Emit initial point immediately
+    this.initialPointSelected.emit(point);
 
-    if (this.paths.length) {
-      msg += `\nPaths:\n`;
-      this.paths.forEach((p, i) => {
-        msg += `  Path ${i + 1} (from lat=${p.start.lat}, lon=${p.start.lon}):\n`;
-        p.path.forEach((pt, j) => {
-          msg += `    ${j + 1}: lat=${pt.lat}, lon=${pt.lon}, elev=${pt.elevation}\n`;
-        });
-      });
-    }
+    this.definePathMode = true;
+    this.definePathModeChanged.emit(true);
 
-    return msg || 'No details available.';
+    const pathEntry = { start: point, path: [] };
+    this.paths.push(pathEntry);
+    this.currentPathIndex = this.paths.length - 1;
+    this.currentPath = [];
+    this.selectedSpeed = 0;
+
+    
   }
 
   addPathPoint(point: { lat: number; lon: number; elevation: number }) {
-    if (this.definePathMode) {
-      this.currentPath.push(point);
-      this.pathsChanged.emit({
-        paths: [...this.paths],
-        currentPath: [...this.currentPath],
-        currentPathIndex: this.currentPathIndex
-      });
-    }
-  }
+    if (!this.definePathMode || this.currentPathIndex < 0) return;
 
-  onPathDone() {
+    this.currentPath.push(point);
     this.paths[this.currentPathIndex].path = [...this.currentPath];
-    if (this.currentPathIndex < this.confirmedPoints.length - 1) {
-      this.currentPathIndex++;
-      this.currentPath = [];
-    } else {
-      this.definePathMode = false;
-      this.definePathModeChanged.emit(false);
-    }
+
     this.pathsChanged.emit({
       paths: [...this.paths],
-      currentPath: [],
+      currentPath: [...this.currentPath],
       currentPathIndex: this.currentPathIndex
     });
   }
 
-  onPathRedo() {
-    this.currentPath = [];
+  finalizeCurrentPoint() {
+    if (!this.selectedPoint || this.selectedSpeed <= 0 || this.currentPath.length === 0) return;
+
+    const pointWithSpeed = { ...this.selectedPoint, speed: this.selectedSpeed };
+    this.confirmedPoints.push(pointWithSpeed);
+    this.confirmedPointsChange.emit([...this.confirmedPoints]);
+
+    // Set all to false and open the latest added
+    this.isOpen = this.confirmedPoints.map(() => false);
+    this.showCard = false;
+    this.resetPathState();
+    
   }
 
-  onSpecDone() {
-    if (!this.specSpeed) return;
-    this.specInputs[this.currentSpecIndex] = {
-      speed: Number(this.specSpeed)
-    };
-    if (this.currentSpecIndex < this.confirmedPoints.length - 1) {
-      this.currentSpecIndex++;
-      this.specSpeed = '';
-    } else {
-      const result = this.confirmedPoints.map((pt, i) => ({
-        ...pt,
-        speed: this.specInputs[i].speed
-      }));
-      this.defineSpecMode = false;
-      console.log('All specs:', result);
+  redoCurrentPoint() {
+    if (this.currentPathIndex >= 0) {
+      this.paths.splice(this.currentPathIndex, 1);
     }
+
+    this.resetPathState();
   }
 
-  onSpecRedo() {
-    if (this.currentSpecIndex > 0) {
-      this.currentSpecIndex--;
-      const prev = this.specInputs[this.currentSpecIndex];
-      this.specSpeed = prev.speed ? String(prev.speed) : '';
-    }
-  }
-
-  hardReset() {
-    this.confirmedPoints = [];
-    this.specInputs = [];
-    this.specSpeed = '';
-    this.currentSpecIndex = 0;
-    this.paths = [];
+  resetPathState() {
+    this.selectedPoint = null;
+    this.selectedSpeed = 0;
     this.currentPath = [];
-    this.currentPathIndex = 0;
-    this.message = '';
+    this.currentPathIndex = -1;
+    this.addPointMode = false;
     this.selectionMode = false;
-    this.defineSpecMode = false;
     this.definePathMode = false;
+    this.message = '';
+
     this.selectionModeChanged.emit(false);
     this.definePathModeChanged.emit(false);
-    this.pathsChanged.emit({
-      paths: [],
-      currentPath: [],
-      currentPathIndex: 0
-    });
-    this.pointReset.emit();
   }
 
-  onConfirmDetailsDone() {
-    const allHaveSpecs = this.specInputs.length === this.confirmedPoints.length &&
-      this.specInputs.every(spec => spec.speed > 0);
-    const allHavePaths = this.paths.length === this.confirmedPoints.length &&
-      this.paths.every(p => Array.isArray(p.path) && p.path.length > 0);
+  deletePoint(index: number) {
+    this.confirmedPoints.splice(index, 1);
+    this.paths.splice(index, 1);
+    this.isOpen.splice(index, 1); // remove corresponding open state
+  }
 
-    if (!allHaveSpecs || !allHavePaths) {
-      this.message = "Fill all details for all points";
+  toggleOpen(i: number) {
+    this.isOpen = this.isOpen.map((_, index) => index === i ? !this.isOpen[i] : false);
+  }
+
+  handleDoneClick() {
+    const hasTerrain = this.terrainValue !== null && this.terrainSegmentSize !== null;
+    const hasPoints = this.confirmedPoints.length > 0;
+    const allPathsSet =
+      this.paths.length === this.confirmedPoints.length &&
+      this.paths.every(p => p.path.length > 0);
+
+    if (!hasTerrain || !hasPoints || !allPathsSet) {
+      const reasons: string[] = [];
+      if (!hasTerrain) reasons.push('terrain type');
+      if (!hasPoints) reasons.push('at least one point');
+      if (!allPathsSet) reasons.push('paths for all points');
+
+      this.message = `❗ Please provide ${reasons.join(', ')} before proceeding.`;
+      setTimeout(() => (this.message = ''), 3000);
       return;
     }
 
+    this.onConfirmDetailsDone();
+  }
+
+  onConfirmDetailsDone() {
     const details = this.confirmedPoints.map((pt, i) => ({
-      start: pt,
+      start: {
+        lat: pt.lat,
+        lon: pt.lon,
+        elevation: pt.elevation
+      },
       path: this.paths[i].path,
-      speed: this.specInputs[i].speed
+      speed: pt.speed
     }));
 
-    // ✅ Emit everything together
     this.confirmDetailsFinalized.emit({
       segmentSize: this.terrainSegmentSize,
       details
     });
 
-    this.message = '';
-  }
-
-  confirmPoint() {
-    if (this.selectedPoint) {
-      console.log("console log of sidebar.component.ts has been run for confirmPoint");
-      this.pointConfirmed.emit(this.selectedPoint);
-    }
-  }
-
-  resetPoint() {
-    console.log("console log of sidebar.component.ts has been run for resetPoint");
-    this.pointReset.emit();
+    this.message = '✅ Details submitted successfully.';
+    setTimeout(() => (this.message = ''), 2000);
   }
 }
+
 
 
 

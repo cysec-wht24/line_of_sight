@@ -23,8 +23,9 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
   constructor(private demDataService: DemDataService) {}
 
   @ViewChild('demCanvas', { static: false }) canvasRef!: ElementRef<HTMLCanvasElement>;
-  
-  @Input() confirmedPoints: { lat: number; lon: number; elevation: number }[] = [];
+
+  @Input() initialPoints: { lat: number; lon: number; elevation: number }[] = [];
+  @Input() confirmedPoints: Array<{ lat: number; lon: number; elevation: number; speed: number }> = [];
   @Input() selectionMode: boolean = false;
   @Input() definePathMode: boolean = false;
   @Input() paths: Array<{
@@ -73,7 +74,8 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
     if (
       (changes['confirmedPoints'] && this.canvasRef) ||
       (changes['paths'] && this.canvasRef) ||
-      (changes['movingPoints'] && this.canvasRef)
+      (changes['movingPoints'] && this.canvasRef) ||
+      (changes['initialPoints'] && this.canvasRef)
     ) {
       this.resizeAndRender();
     }
@@ -389,6 +391,19 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
         ctx.beginPath();
         ctx.arc(canvasX, canvasY, 4, 0, 2 * Math.PI);
         ctx.fill();
+      }
+    }
+
+    // Draw initial points as red outlined circles (to distinguish from confirmed points)
+    if (this.initialPoints?.length) {
+      ctx.strokeStyle = 'red';
+      ctx.lineWidth = 2;
+      for (const point of this.initialPoints) {
+        const canvasX = (point.lon - this.tiepointX) / this.pixelSizeX * this.currentScale;
+        const canvasY = (this.tiepointY - point.lat) / this.pixelSizeY * this.currentScale;
+        ctx.beginPath();
+        ctx.arc(canvasX, canvasY, 5, 0, 2 * Math.PI); // Slightly larger
+        ctx.stroke(); // outlined circle
       }
     }
 

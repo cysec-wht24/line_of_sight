@@ -1,108 +1,120 @@
-<div class="sidebar-container">
-  <!-- Input stays at the top -->
-  <div class="input-container">
-    <input 
-      type="text" 
-      placeholder="Type command"
-      [(ngModel)]="commandInput"
-      (keydown.enter)="processCommand()"
-      class="input" 
-    />
-  </div>
-
-  <!-- Selected point info (if any) -->
-  <div *ngIf="selectionMode" class="point-info">
-    <h3>Select Initial Point</h3>
-    <ng-container *ngIf="selectedPoint; else noPoint">
-      <p>Lat: {{ selectedPoint.lat.toFixed(5) }}</p>
-      <p>Lon: {{ selectedPoint.lon.toFixed(5) }}</p>
-      <p>Elevation: {{ selectedPoint.elevation.toFixed(2) }} m</p>
-    </ng-container>
-    <ng-template #noPoint>
-      <p class="italic">No point selected yet.</p>
-    </ng-template>
-  </div>
-
-  <!-- Confirmed points Specs -->
-  <div *ngIf="defineSpecMode && confirmedPoints.length > 0" class="spec-info">
-    <h3>Define Speed</h3>
-    <div class="spec-fields">
-      <div>
-        <span>Point {{ currentSpecIndex + 1 }} of {{ confirmedPoints.length }}</span>
-        <div>
-          Lat: {{ confirmedPoints[currentSpecIndex].lat.toFixed(5) }},
-          Lon: {{ confirmedPoints[currentSpecIndex].lon.toFixed(5) }},
-          Elev: {{ confirmedPoints[currentSpecIndex].elevation.toFixed(2) }} m
-        </div>
-      </div>
+<!-- Sidebar Layout -->
+<div class="bg-gray-800 text-white flex flex-col h-screen p-4 gap-4 overflow-hidden">
+  <!-- TOP: Terrain Input + Buttons -->
+  <div class="flex flex-col gap-4 flex-shrink-0">
+    <div class="form-control">
+      <label class="label">
+        <span class="text-gray-300">Terrain Type (1–10)</span>
+      </label>
       <input
         type="number"
-        class="input input-bordered mt"
-        placeholder="Speed"
-        [(ngModel)]="specSpeed"
-        (keydown.enter)="onSpecDone()"
+        min="1"
+        max="10"
+        [(ngModel)]="terrainValue"
+        (change)="onTerrainChange()"
+        class="bg-gray-900 text-white border border-gray-600 rounded-md p-2 w-full"
+        placeholder="Enter terrain type"
       />
+      <p *ngIf="terrainSegmentSize" class="text-xs text-gray-400 mt-1">
+        Segment Size: {{ terrainSegmentSize }} m
+      </p>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="flex gap-2">
+      <button
+        class="flex-1 px-4 py-2 rounded-md font-medium text-center cursor-pointer bg-blue-500 text-white"
+        (click)="startAddPoint()"
+      >
+        Add Point
+      </button>
+      <button
+        class="flex-1 px-4 py-2 rounded-md font-medium text-center cursor-pointer bg-green-500 text-white disabled:bg-gray-500 disabled:cursor-not-allowed disabled:pointer-events-none"
+        [disabled]="confirmedPoints.length === 0 || !terrainSegmentSize"
+        (click)="handleDoneClick()"
+      >
+        Done
+      </button>
+    </div>
+
+    <!-- Expanded Add Point Card -->
+    <div *ngIf="addPointMode" class="border border-gray-600 bg-gray-900 rounded-md p-4 flex flex-col gap-2 text-white">
+      <h3 class="text-lg font-semibold">Define New Point</h3>
+      <p *ngIf="!selectedPoint" class="text-yellow-400 text-sm">
+        {{ message }}
+      </p>
+
+      <ng-container *ngIf="selectedPoint">
+        <p>Lat: {{ selectedPoint.lat.toFixed(5) }}, Lon: {{ selectedPoint.lon.toFixed(5) }}</p>
+        <p>Elevation: {{ selectedPoint.elevation.toFixed(2) }} m</p>
+
+        <input
+          type="number"
+          [(ngModel)]="selectedSpeed"
+          min="0"
+          placeholder="Enter speed (m/s)"
+          class="bg-gray-800 border border-gray-600 rounded-md p-2 text-white"
+        />
+
+        <div class="flex justify-end gap-2 mt-2">
+          <button
+            class="px-4 py-1 bg-green-600 rounded-md text-white disabled:bg-gray-600"
+            [disabled]="currentPath.length === 0 || selectedSpeed <= 0"
+            (click)="finalizeCurrentPoint()"
+          >
+            Done
+          </button>
+          <button
+            class="px-4 py-1 bg-red-600 rounded-md text-white"
+            (click)="redoCurrentPoint()"
+          >
+            Redo
+          </button>
+        </div>
+      </ng-container>
     </div>
   </div>
 
-  <div *ngIf="defineSpecMode && confirmedPoints.length === 0" class="warning">
-    Please select and confirm at least one point.
-  </div>
-
-  <!-- Define Path -->
-  <div *ngIf="definePathMode && confirmedPoints.length > 0" class="path-info">
-    <h3>Define Path for Point {{ currentPathIndex + 1 }} of {{ confirmedPoints.length }}</h3>
-    <div>
-      <div>
-        <span>Start:</span>
-        Lat: {{ confirmedPoints[currentPathIndex].lat.toFixed(5) }},
-        Lon: {{ confirmedPoints[currentPathIndex].lon.toFixed(5) }},
-        Elev: {{ confirmedPoints[currentPathIndex].elevation.toFixed(2) }} m
+  <!-- SCROLLABLE COLLAPSIBLE CONFIRMED POINTS -->
+  <div class="flex-1 overflow-y-auto pr-1 flex flex-col gap-2">
+    <div
+      *ngFor="let point of confirmedPoints; let i = index"
+      class="border border-gray-700 bg-gray-900 rounded-md"
+    >
+      <div
+        class="text-base font-semibold flex justify-between items-center cursor-pointer bg-gray-800 text-white px-4 py-2"
+        (click)="toggleOpen(i)"
+      >
+        Point {{ i + 1 }}
+        <button
+          class="text-xs px-2 py-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
+          (click)="onDeleteClick(i, $event)"
+        >
+          ✕
+        </button>
       </div>
-      <div class="path-list">
-        <ul>
-          <li *ngFor="let pt of currentPath">
-            -> Lat: {{ pt.lat.toFixed(5) }}, Lon: {{ pt.lon.toFixed(5) }}, Elev: {{ pt.elevation.toFixed(2) }}
-          </li>
-        </ul>
-        <span class="subtle">Click on the DEM to add path points.</span>
+
+      <div
+        *ngIf="isOpen[i]"
+        class="px-4 py-2 text-sm text-gray-300 flex flex-col gap-2"
+      >
+        <p><strong>Coordinates:</strong> Lat: {{ point.lat.toFixed(5) }}, Lon: {{ point.lon.toFixed(5) }}</p>
+        <p><strong>Elevation:</strong> {{ point.elevation.toFixed(2) }} m</p>
+        <p><strong>Speed:</strong> {{ point.speed }} m/s</p>
+
+        <div *ngIf="paths[i]?.path?.length">
+          <strong>Path:</strong>
+          <ul class="list-disc ml-4 flex flex-col gap-1">
+            <li *ngFor="let pt of paths[i].path">
+              Lat: {{ pt.lat.toFixed(5) }}, Lon: {{ pt.lon.toFixed(5) }}, Elev: {{ pt.elevation.toFixed(2) }}
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
   </div>
 
-  <div *ngIf="definePathMode && confirmedPoints.length === 0" class="warning">
-    Please select and confirm at least one point.
-  </div>
-
-  <!-- Show details message if present -->
-  <div *ngIf="message" class="message-box">
-    {{ message }}
-  </div>
-
-  <!-- Spacer to push buttons to the bottom -->
-  <div class="spacer"></div>
-
-  <!-- Buttons -->
-  <div class="button-group">
-    <button
-      (click)="message ? hardReset() : defineSpecMode ? onSpecRedo() : definePathMode ? onPathRedo() : resetPoint()"
-      [disabled]="
-        (defineSpecMode && currentSpecIndex === 0) ||
-        (definePathMode && currentPath.length === 0)
-      "
-      class="btn btn-secondary"
-    >
-      Redo
-    </button>
-    <button
-      (click)="message ? onConfirmDetailsDone() : defineSpecMode ? onSpecDone() : definePathMode ? onPathDone() : confirmPoint()"
-      [disabled]="
-        (defineSpecMode && !specSpeed) ||
-        (definePathMode && currentPath.length === 0)
-      "
-      class="btn btn-primary"
-    >
-      Done
-    </button>
-  </div>
 </div>
+
+
+
