@@ -8,7 +8,7 @@ import {
   EventEmitter, 
   Input, 
   OnChanges, 
-  SimpleChanges, 
+  SimpleChanges,
 } from '@angular/core';
 import { fromArrayBuffer } from 'geotiff';
 import { DemDataService } from 'src/app/services/dem-data.service';
@@ -24,6 +24,7 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
 
   @ViewChild('demCanvas', { static: false }) canvasRef!: ElementRef<HTMLCanvasElement>;
 
+  @Input() deletedPointIndex: number | null = null;
   @Input() initialPoints: { lat: number; lon: number; elevation: number }[] = [];
   @Input() confirmedPoints: Array<{ lat: number; lon: number; elevation: number; speed: number }> = [];
   @Input() selectionMode: boolean = false;
@@ -72,12 +73,16 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (
-      (changes['confirmedPoints'] && this.canvasRef) ||
-      (changes['paths'] && this.canvasRef) ||
-      (changes['movingPoints'] && this.canvasRef) ||
-      (changes['initialPoints'] && this.canvasRef)
+      changes['confirmedPoints'] ||
+      changes['paths'] ||
+      changes['movingPoints'] ||
+      changes['initialPoints']
     ) {
       this.resizeAndRender();
+    }
+
+    if (changes['deletedPointIndex'] && changes['deletedPointIndex'].currentValue !== null) {
+      this.removeVisualsForDeletedPoint(changes['deletedPointIndex'].currentValue);
     }
   }
 
@@ -107,6 +112,22 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
 
   @HostListener('window:resize')
   onResize() {
+    this.resizeAndRender();
+  }
+
+  removeVisualsForDeletedPoint(index: number): void {
+    // Remove path and point by index
+    this.paths.splice(index, 1);
+    this.confirmedPoints.splice(index, 1);
+    this.initialPoints.splice(index, 1);
+
+    // Reset if the currentPath belongs to the deleted index
+    if (this.currentPathIndex === index) {
+      this.currentPath = [];
+      this.currentPathIndex = -1;
+    }
+
+    // Re-render
     this.resizeAndRender();
   }
 

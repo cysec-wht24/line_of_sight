@@ -33,6 +33,7 @@ export class TimelineComponent implements OnInit {
   @Input() segmentLength: number = 10;
 
   simulation: SimulatedPoint[] = [];
+  
   currentTime: number = 0;
   maxTime: number = 0;
   

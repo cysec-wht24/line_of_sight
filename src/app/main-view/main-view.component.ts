@@ -14,6 +14,7 @@ export class MainViewComponent {
   initialPoints: { lat: number; lon: number; elevation: number }[] = [];
 
   confirmedPoints: any[] = [];
+  deletedPointIndex: number | null = null;
 
   movingPoints: { x: number, y: number, id: number }[] = [];
 
@@ -76,6 +77,13 @@ export class MainViewComponent {
     if (this.selectionMode) {
       this.sidebar.onMapPointSelected(point);
     }
+  }
+
+  onDeletedPoint(index: number) {
+    this.deletedPointIndex = index;
+
+    // Optionally reset after short delay to avoid repeated triggering
+    setTimeout(() => this.deletedPointIndex = null, 100);
   }
 
   

@@ -17,6 +17,7 @@ export class SidebarComponent {
   @Output() confirmDetailsFinalized = new EventEmitter<any>();
   @Output() confirmedPointsChange = new EventEmitter<any[]>();
   @Output() initialPointSelected = new EventEmitter<{ lat: number; lon: number; elevation: number }>();
+  @Output() deletedPointIndexChange = new EventEmitter<number>();
 
   showCard = false;
   isOpen: boolean[] = [];
@@ -41,6 +42,14 @@ export class SidebarComponent {
   currentPath: { lat: number; lon: number; elevation: number }[] = [];
 
   selectedSpeed: number = 0;
+
+  // cancelAddPoint() {
+  //   this.addPointMode = false;
+  //   this.selectedPoint = null;
+  //   this.selectedSpeed = 0;
+  //   this.currentPath = [];
+  //   this.message = 'Click on the DEM to select a point.';
+  // }
 
   onTerrainChange() {
     this.terrainSegmentSize = this.getSegmentSize(this.terrainValue ?? 0);
@@ -108,22 +117,34 @@ export class SidebarComponent {
     if (!this.selectedPoint || this.selectedSpeed <= 0 || this.currentPath.length === 0) return;
 
     const pointWithSpeed = { ...this.selectedPoint, speed: this.selectedSpeed };
-    this.confirmedPoints.push(pointWithSpeed);
+
+    // Add to confirmed points
+    this.confirmedPoints = [...this.confirmedPoints, pointWithSpeed];
     this.confirmedPointsChange.emit([...this.confirmedPoints]);
 
-    // Set all to false and open the latest added
+    // Ensure UI state is synced
     this.isOpen = this.confirmedPoints.map(() => false);
     this.showCard = false;
+
+    // Reset selection state for next point
     this.resetPathState();
-    
   }
 
+
   redoCurrentPoint() {
+    if (this.currentPath.length === 0) return; // safeguard
+
+    // Just reset the path to empty
+    this.currentPath = [];
     if (this.currentPathIndex >= 0) {
-      this.paths.splice(this.currentPathIndex, 1);
+      this.paths[this.currentPathIndex].path = [];
     }
 
-    this.resetPathState();
+    this.pathsChanged.emit({
+      paths: [...this.paths],
+      currentPath: [],
+      currentPathIndex: this.currentPathIndex
+    });
   }
 
   resetPathState() {
@@ -140,10 +161,42 @@ export class SidebarComponent {
     this.definePathModeChanged.emit(false);
   }
 
-  deletePoint(index: number) {
-    this.confirmedPoints.splice(index, 1);
-    this.paths.splice(index, 1);
-    this.isOpen.splice(index, 1); // remove corresponding open state
+ deletePoint(index: number) {
+    const deletedPath = this.paths[index];
+    const isActiveInitial =
+      this.selectedPoint &&
+      deletedPath &&
+      this.selectedPoint.lat === deletedPath.start.lat &&
+      this.selectedPoint.lon === deletedPath.start.lon &&
+      this.selectedPoint.elevation === deletedPath.start.elevation;
+    const isActivePath = this.currentPathIndex === index;
+
+    // 1️⃣ If deleting the active point/path, reset first (like Redo):
+    if (isActiveInitial || isActivePath) {
+      this.resetPathState();
+      this.pathsChanged.emit({
+        paths: [...this.paths],
+        currentPath: [],
+        currentPathIndex: -1
+      });
+      this.pointReset.emit(); // Trigger canvas cleanup
+    }
+
+    // 2️⃣ Remove data arrays immutably:
+    this.confirmedPoints = this.confirmedPoints.filter((_, i) => i !== index);
+    this.paths = this.paths.filter((_, i) => i !== index);
+    this.isOpen = this.isOpen.filter((_, i) => i !== index);
+
+    this.confirmedPointsChange.emit([...this.confirmedPoints]);
+
+    // 3️⃣ Fix index shifting:
+    if (this.currentPathIndex > index) {
+      this.currentPathIndex--;
+    } else if (this.currentPathIndex >= this.paths.length) {
+      this.currentPathIndex = -1;
+    }
+
+    this.deletedPointIndexChange.emit(index);
   }
 
   toggleOpen(i: number) {

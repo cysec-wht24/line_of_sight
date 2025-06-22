@@ -8,6 +8,7 @@
       (definePathModeChanged)="onDefinePathModeChanged($event)"
       (pathsChanged)="onPathsChanged($event)"
       (confirmDetailsFinalized)="onConfirmDetailsFinalized($event)"
+      (deletedPointIndexChange)="onDeletedPoint($event)"
     ></app-sidebar>
   </div>
 
@@ -25,6 +26,7 @@
         [movingPoints]="movingPoints"
         [confirmedPoints]="confirmedPoints"
         [initialPoints]="initialPoints"
+        [deletedPointIndex]="deletedPointIndex"
       ></app-dem-display>
     </div>
 
