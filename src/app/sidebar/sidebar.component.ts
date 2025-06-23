@@ -161,42 +161,46 @@ export class SidebarComponent {
     this.definePathModeChanged.emit(false);
   }
 
- deletePoint(index: number) {
-    const deletedPath = this.paths[index];
-    const isActiveInitial =
-      this.selectedPoint &&
-      deletedPath &&
-      this.selectedPoint.lat === deletedPath.start.lat &&
-      this.selectedPoint.lon === deletedPath.start.lon &&
-      this.selectedPoint.elevation === deletedPath.start.elevation;
+  deletePoint(index: number) {
+    // Reset state if this was the active path
+    const isActiveInitial = this.selectedPoint &&
+      this.paths[index] &&
+      this.selectedPoint.lat === this.paths[index].start.lat &&
+      this.selectedPoint.lon === this.paths[index].start.lon &&
+      this.selectedPoint.elevation === this.paths[index].start.elevation;
+
     const isActivePath = this.currentPathIndex === index;
 
-    // 1️⃣ If deleting the active point/path, reset first (like Redo):
     if (isActiveInitial || isActivePath) {
       this.resetPathState();
       this.pathsChanged.emit({
-        paths: [...this.paths],
+        paths: [],
         currentPath: [],
         currentPathIndex: -1
       });
-      this.pointReset.emit(); // Trigger canvas cleanup
+      this.pointReset.emit();
     }
 
-    // 2️⃣ Remove data arrays immutably:
-    this.confirmedPoints = this.confirmedPoints.filter((_, i) => i !== index);
-    this.paths = this.paths.filter((_, i) => i !== index);
-    this.isOpen = this.isOpen.filter((_, i) => i !== index);
+    // 🔁 Immutably update arrays
+    const updatedConfirmed = [...this.confirmedPoints];
+    const updatedPaths = [...this.paths];
+    const updatedIsOpen = [...this.isOpen];
 
-    this.confirmedPointsChange.emit([...this.confirmedPoints]);
+    updatedConfirmed.splice(index, 1);
+    updatedPaths.splice(index, 1);
+    updatedIsOpen.splice(index, 1);
 
-    // 3️⃣ Fix index shifting:
-    if (this.currentPathIndex > index) {
-      this.currentPathIndex--;
-    } else if (this.currentPathIndex >= this.paths.length) {
-      this.currentPathIndex = -1;
-    }
+    this.confirmedPoints = updatedConfirmed;
+    this.paths = updatedPaths;
+    this.isOpen = updatedIsOpen;
 
-    this.deletedPointIndexChange.emit(index);
+    // ✅ Emit both updated confirmedPoints and paths
+    this.confirmedPointsChange.emit(updatedConfirmed);
+    this.pathsChanged.emit({
+      paths: [...updatedPaths],
+      currentPath: [],
+      currentPathIndex: -1
+    });
   }
 
   toggleOpen(i: number) {

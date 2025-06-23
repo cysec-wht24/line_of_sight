@@ -85,8 +85,6 @@ export class MainViewComponent {
     // Optionally reset after short delay to avoid repeated triggering
     setTimeout(() => this.deletedPointIndex = null, 100);
   }
-
-  
 }
 
 
