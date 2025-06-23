@@ -71,6 +71,8 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
   //   this.resizeAndRender();   
   // }
 
+  private shouldRender = false;
+
   ngOnChanges(changes: SimpleChanges): void {
     if (
       changes['confirmedPoints'] ||
@@ -78,18 +80,30 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
       changes['movingPoints'] ||
       changes['initialPoints']
     ) {
-      this.resizeAndRender();
+      if (this.canvasRef?.nativeElement) {
+        this.resizeAndRender();
+      } else {
+        this.shouldRender = true;
+      }
     }
 
+    // 🔴 Handle deletedPointIndex change here:
     if (changes['deletedPointIndex'] && changes['deletedPointIndex'].currentValue !== null) {
-      this.removeVisualsForDeletedPoint(changes['deletedPointIndex'].currentValue);
+      const index = changes['deletedPointIndex'].currentValue;
+      this.removeVisualsForDeletedPoint(index);
     }
   }
 
-  ngAfterViewInit(): void {     
-    this.loadDEM().then(() => {       
-      this.observeResizeAndRender();     
-    });   
+  ngAfterViewInit(): void {
+    this.loadDEM().then(() => {
+      this.observeResizeAndRender();
+
+      // Perform pending render if needed
+      if (this.shouldRender) {
+        this.resizeAndRender();
+        this.shouldRender = false;
+      }
+    });
   }
 
   observeResizeAndRender(): void {
