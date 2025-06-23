@@ -2,6 +2,7 @@
   <div class="sidebar-container">
     <app-sidebar
       (initialPointSelected)="onInitialPointSelected($event)"
+      (initialPointCleared)="onInitialPointCleared()"
       [(confirmedPoints)]="confirmedPoints"
       (selectionModeChanged)="onSelectionModeChanged($event)"
       [definePathMode]="definePathMode"

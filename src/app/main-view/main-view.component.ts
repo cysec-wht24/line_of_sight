@@ -36,9 +36,13 @@ export class MainViewComponent {
   }
 
   onInitialPointSelected(point: { lat: number; lon: number; elevation: number }) {
-     this.initialPoints = [...this.initialPoints, point];
-    // this.initialPoints.push(point);
-    // this.cdr.detectChanges(); // ensure Angular updates the view
+    this.initialPoints = [...this.initialPoints, point];
+  }
+
+  // ✨ Called when sidebar tells us to clear the hollow red dot
+  onInitialPointCleared() {
+    this.initialPoints = [];
+    this.cdr.detectChanges(); // optional: force rerender if needed
   }
 
   onConfirmDetailsFinalized(event: { segmentSize: number, details: any[] }) {
@@ -86,5 +90,6 @@ export class MainViewComponent {
     setTimeout(() => this.deletedPointIndex = null, 100);
   }
 }
+
 
 

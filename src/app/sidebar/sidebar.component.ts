@@ -18,16 +18,12 @@ export class SidebarComponent {
   @Output() confirmedPointsChange = new EventEmitter<any[]>();
   @Output() initialPointSelected = new EventEmitter<{ lat: number; lon: number; elevation: number }>();
   @Output() deletedPointIndexChange = new EventEmitter<number>();
+  @Output() initialPointCleared = new EventEmitter<void>(); // ✅ added
 
   showCard = false;
   isOpen: boolean[] = [];
   message: string = '';
 
-  toggleCard() {
-    this.showCard = !this.showCard;
-  }
-
-  // confirmedPoints: Array<{ lat: number; lon: number; elevation: number; speed: number }> = [];
   paths: Array<{
     start: { lat: number; lon: number; elevation: number };
     path: { lat: number; lon: number; elevation: number }[];
@@ -43,21 +39,8 @@ export class SidebarComponent {
 
   selectedSpeed: number = 0;
 
-  // cancelAddPoint() {
-  //   this.addPointMode = false;
-  //   this.selectedPoint = null;
-  //   this.selectedSpeed = 0;
-  //   this.currentPath = [];
-  //   this.message = 'Click on the DEM to select a point.';
-  // }
-
   onTerrainChange() {
     this.terrainSegmentSize = this.getSegmentSize(this.terrainValue ?? 0);
-  }
-
-  onDeleteClick(index: number, event: MouseEvent) {
-    event.stopPropagation(); // Prevent toggling the collapse
-    this.deletePoint(index);
   }
 
   getSegmentSize(num: number): number | null {
@@ -83,9 +66,9 @@ export class SidebarComponent {
     if (!this.addPointMode) return;
 
     this.selectedPoint = point;
-    this.message = ''; // Clear message after point selection
+    this.message = '';
 
-    // ✅ Emit initial point immediately
+    // ✅ Emit point to draw on DEM
     this.initialPointSelected.emit(point);
 
     this.definePathMode = true;
@@ -96,8 +79,6 @@ export class SidebarComponent {
     this.currentPathIndex = this.paths.length - 1;
     this.currentPath = [];
     this.selectedSpeed = 0;
-
-    
   }
 
   addPathPoint(point: { lat: number; lon: number; elevation: number }) {
@@ -121,6 +102,7 @@ export class SidebarComponent {
     // Add to confirmed points
     this.confirmedPoints = [...this.confirmedPoints, pointWithSpeed];
     this.confirmedPointsChange.emit([...this.confirmedPoints]);
+    this.initialPointCleared.emit();
 
     // Ensure UI state is synced
     this.isOpen = this.confirmedPoints.map(() => false);
@@ -130,11 +112,9 @@ export class SidebarComponent {
     this.resetPathState();
   }
 
-
   redoCurrentPoint() {
-    if (this.currentPath.length === 0) return; // safeguard
+    if (this.currentPath.length === 0) return;
 
-    // Just reset the path to empty
     this.currentPath = [];
     if (this.currentPathIndex >= 0) {
       this.paths[this.currentPathIndex].path = [];
@@ -161,8 +141,12 @@ export class SidebarComponent {
     this.definePathModeChanged.emit(false);
   }
 
+  onDeleteClick(index: number, event: MouseEvent) {
+    event.stopPropagation(); // Prevent toggleOpen from firing
+    this.deletePoint(index);
+  }
+
   deletePoint(index: number) {
-    // Reset state if this was the active path
     const isActiveInitial = this.selectedPoint &&
       this.paths[index] &&
       this.selectedPoint.lat === this.paths[index].start.lat &&
@@ -181,7 +165,6 @@ export class SidebarComponent {
       this.pointReset.emit();
     }
 
-    // 🔁 Immutably update arrays
     const updatedConfirmed = [...this.confirmedPoints];
     const updatedPaths = [...this.paths];
     const updatedIsOpen = [...this.isOpen];
@@ -194,7 +177,6 @@ export class SidebarComponent {
     this.paths = updatedPaths;
     this.isOpen = updatedIsOpen;
 
-    // ✅ Emit both updated confirmedPoints and paths
     this.confirmedPointsChange.emit(updatedConfirmed);
     this.pathsChanged.emit({
       paths: [...updatedPaths],
