@@ -1,9 +1,8 @@
-:host {
+/* :host {
   display: block;
-  max-height: 100vh;        /* Limit height to viewport */
-  overflow-y: auto;         /* Enable vertical scroll */
-  
-}
+  max-height: 100vh;        
+  overflow-y: hidden;
+} */
 
 .sidebar-container {
   background-color: #1f2937; /* gray-800 */
