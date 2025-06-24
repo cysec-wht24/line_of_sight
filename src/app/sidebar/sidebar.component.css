@@ -4,3 +4,196 @@
   overflow-y: auto;         /* Enable vertical scroll */
   
 }
+
+.sidebar-container {
+  background-color: #1f2937; /* gray-800 */
+  color: white;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 1rem;
+  gap: 1rem;
+  overflow: hidden;
+}
+
+.top-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
+.form-control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.label-text {
+  color: #d1d5db; /* gray-300 */
+}
+
+.terrain-input {
+  background-color: #111827; /* gray-900 */
+  color: white;
+  border: 1px solid #4b5563; /* gray-600 */
+  border-radius: 0.375rem;
+  padding: 0.5rem;
+  width: 100%;
+}
+
+.segment-size {
+  font-size: 0.75rem;
+  color: #9ca3af; /* gray-400 */
+  margin-top: 0.25rem;
+}
+
+.button-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.add-point-btn {
+  flex: 1;
+  padding: 0.5rem 1rem;
+  background-color: #3b82f6; /* blue-500 */
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: center;
+}
+
+.done-btn {
+  flex: 1;
+  padding: 0.5rem 1rem;
+  background-color: #10b981; /* green-500 */
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: center;
+}
+
+.done-btn:disabled {
+  background-color: #6b7280; /* gray-500 */
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.add-point-card {
+  border: 1px solid #4b5563;
+  background-color: #111827;
+  border-radius: 0.375rem;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  color: white;
+}
+
+.card-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.message-warning {
+  color: #facc15; /* yellow-400 */
+  font-size: 0.875rem;
+}
+
+.speed-input {
+  background-color: #1f2937;
+  border: 1px solid #4b5563;
+  border-radius: 0.375rem;
+  padding: 0.5rem;
+  color: white;
+}
+
+.card-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.card-done-btn {
+  padding: 0.25rem 1rem;
+  background-color: #16a34a; /* green-600 */
+  border-radius: 0.375rem;
+  color: white;
+  border: none;
+}
+
+.card-done-btn:disabled {
+  background-color: #4b5563;
+}
+
+.card-redo-btn {
+  padding: 0.25rem 1rem;
+  background-color: #dc2626; /* red-600 */
+  border-radius: 0.375rem;
+  color: white;
+  border: none;
+}
+
+.confirmed-points {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.point-container {
+  border: 1px solid #374151; /* gray-700 */
+  background-color: #111827; /* gray-900 */
+  border-radius: 0.375rem;
+}
+
+.point-header {
+  font-size: 1rem;
+  font-weight: 600;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  background-color: #1f2937; /* gray-800 */
+  color: white;
+  padding: 0.5rem 1rem;
+}
+
+.delete-btn {
+  font-size: 0.75rem;
+  padding: 0.25rem;
+  background-color: #ef4444; /* red-500 */
+  color: white;
+  border-radius: 9999px;
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+}
+
+.point-details {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  color: #d1d5db; /* gray-300 */
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.path-list {
+  list-style-type: disc;
+  margin-left: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
