@@ -12,6 +12,8 @@ interface SimulatedPathPoint {
   lat: number;
   timeOffset: number;
   effectiveSpeed: number;
+  slopeType?: 'uphill' | 'downhill';
+  color?: string;
 }
 
 interface SimulatedPoint {
@@ -33,10 +35,8 @@ export class TimelineComponent implements OnInit {
   @Input() segmentLength: number = 10;
 
   simulation: SimulatedPoint[] = [];
-  
   currentTime: number = 0;
   maxTime: number = 0;
-  
 
   ngOnInit(): void {}
 
@@ -51,11 +51,6 @@ export class TimelineComponent implements OnInit {
       pixelSizeX,
       pixelSizeY,
     } = this.demDataService;
-
-    // console.log(`Getting elevation for lon: ${lon}, lat: ${lat}`);
-    // console.log("tiepointX:", tiepointX, "tiepointY:", tiepointY);
-    // console.log("pixelSizeX:", pixelSizeX, "pixelSizeY:", pixelSizeY);
-    // console.log("width:", width, "height:", height);
 
     const minLon = tiepointX;
     const maxLon = tiepointX + (width - 1) * pixelSizeX;
@@ -74,7 +69,7 @@ export class TimelineComponent implements OnInit {
 
     if (col < 0 || col >= width || row < 0 || row >= height) {
       console.warn(`Out of bounds DEM sampling at (${lon}, ${lat})`);
-      return NaN; // Return NaN for out of bounds
+      return NaN;
     }
 
     const index = row * width + col;
@@ -112,7 +107,7 @@ export class TimelineComponent implements OnInit {
     if (angle > 30) return 0.5;
     if (angle > 20) return 0.6;
     if (angle > 10) return 0.7;
-    return 0.4; // remove this function, fix the effective speed operation
+    return 0.4;
   }
 
   getSpeedFactorDownhill(angle: number): number {
@@ -125,13 +120,20 @@ export class TimelineComponent implements OnInit {
     return 0.4;
   }
 
-  simulateMovement(details: PointData[]): SimulatedPoint[] {
-    const result: SimulatedPoint[] = [];//initialize result array
+  // NEW: Helper to get slope type
+  getSlopeType(elevationDiff: number): 'uphill' | 'downhill' {
+    return elevationDiff >= 0 ? 'uphill' : 'downhill';
+  }
 
-    //console.log(`Simulating movement for ${details.length} points`);
+  // NEW: Helper to get color
+  getSlopeColor(elevationDiff: number): string {
+    return elevationDiff >= 0 ? '#FF5733' : '#00FF00'; // Yellow for uphill, green for downhill
+  }
+
+  simulateMovement(details: PointData[]): SimulatedPoint[] {
+    const result: SimulatedPoint[] = [];
 
     details.forEach((point, idx) => {
-      //console.log(`--- Simulating Point ${idx} ---`); // ONe point at a time
       let timeOffset = 0;
       let stopped = false;
       let prev = point.start;
@@ -146,7 +148,6 @@ export class TimelineComponent implements OnInit {
 
       let lastElevation = elevationStart;
       const fullPath = [point.start, ...point.path];
-      //console.log("segmentLength is: ", this.segmentLength , "m");
 
       for (let i = 0; i < fullPath.length - 1; i++) {
         const start = fullPath[i];
@@ -158,7 +159,6 @@ export class TimelineComponent implements OnInit {
         for (const segmentEnd of segments) {
           const segmentDistance = this.haversine(segmentStart.lat, segmentStart.lon, segmentEnd.lat, segmentEnd.lon);
           const elevationEnd = this.getElevation(segmentEnd.lon, segmentEnd.lat);
-
           const elevationDiff = elevationEnd - lastElevation;
           console.log(`elevationEnd: ${elevationEnd}, lastElevation: ${lastElevation}, elevaionDiff: ${elevationDiff}`);
           console.log("ElevationDiff: ", elevationDiff);
@@ -175,13 +175,14 @@ export class TimelineComponent implements OnInit {
           console.log(`Segment Distance: ${segmentDistance} meters, Elevation Diff: ${elevationDiff}, Angle: ${angle}`);
 
           if (factor === 0) {
-            console.log(`Stopping Point ${idx} due to slope`);
             stopped = true;
             simPath.push({
               lon: segmentStart.lon,
               lat: segmentStart.lat,
               timeOffset: timeOffset,
-              effectiveSpeed: 0
+              effectiveSpeed: 0,
+              slopeType: this.getSlopeType(elevationDiff),
+              color: this.getSlopeColor(elevationDiff)
             });
             break;
           }
@@ -194,7 +195,9 @@ export class TimelineComponent implements OnInit {
             lon: segmentEnd.lon,
             lat: segmentEnd.lat,
             timeOffset: timeOffset,
-            effectiveSpeed: effectiveSpeed
+            effectiveSpeed: effectiveSpeed,
+            slopeType: this.getSlopeType(elevationDiff),
+            color: this.getSlopeColor(elevationDiff)
           });
 
           lastElevation = elevationEnd;
@@ -203,8 +206,6 @@ export class TimelineComponent implements OnInit {
 
         if (stopped) break;
       }
-
-      console.log(`Total time for Point ${idx}: ${timeOffset} seconds`);
 
       result.push({
         id: idx,
@@ -275,8 +276,6 @@ export class TimelineComponent implements OnInit {
         const interpolatedLon = prev.lon + (next.lon - prev.lon) * clampedT;
         const interpolatedLat = prev.lat + (next.lat - prev.lat) * clampedT;
 
-        // console.log(`Interpolated Position - ID ${point.id}: Lon ${interpolatedLon}, Lat ${interpolatedLat}`);
-
         return { lon: interpolatedLon, lat: interpolatedLat, id: point.id };
       }
     });
@@ -306,4 +305,5 @@ export class TimelineComponent implements OnInit {
     return parts.join(' ');
   }
 }
+
 

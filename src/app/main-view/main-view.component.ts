@@ -25,6 +25,9 @@ export class MainViewComponent {
   selectionMode = false;
   definePathMode = false;
 
+  // ✅ Added: simulation result for slope-colored segments
+  slopeColoredSimulation: any[] = [];
+
   constructor(private cdr: ChangeDetectorRef) {}
 
   onPositionsChanged(points: { lon: number, lat: number, id: number }[]) {
@@ -53,6 +56,8 @@ export class MainViewComponent {
         segmentSize: event.segmentSize,
         details: event.details
       });
+      // ✅ Store the simulation result to pass into <app-dem-display>
+      this.slopeColoredSimulation = this.timeline.simulation;
     }
   }
 

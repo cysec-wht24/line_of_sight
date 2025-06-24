@@ -36,6 +36,7 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
   @Input() currentPath: any[] = [];
   @Input() currentPathIndex: number = 0;
   @Input() movingPoints: { x: number; y: number; id: number }[] = [];
+  @Input() slopeColoredSimulation: any[] = [];
   
   @Output() pointSelected = new EventEmitter<{ lat: number; lon: number; elevation: number }>();
   @Output() pathPointSelected = new EventEmitter<{ lat: number; lon: number; elevation: number }>();
@@ -457,6 +458,28 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
         ctx.font = '10px Arial';
         ctx.fillText(String(pt.id), canvasX - 3, canvasY + 3);
         ctx.fillStyle = 'blue';
+      }
+    }
+
+    // ✅ Draw slope-colored simulation paths
+    if (this.slopeColoredSimulation?.length) {
+      for (const simPoint of this.slopeColoredSimulation) {
+        const path = simPoint.path;
+        for (let i = 0; i < path.length - 1; i++) {
+          const current = path[i];
+          const next = path[i + 1];
+          const color = current.color || '#FFFFFF';
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          const x1 = (current.lon - this.tiepointX) / this.pixelSizeX * this.currentScale;
+          const y1 = (this.tiepointY - current.lat) / this.pixelSizeY * this.currentScale;
+          const x2 = (next.lon - this.tiepointX) / this.pixelSizeX * this.currentScale;
+          const y2 = (this.tiepointY - next.lat) / this.pixelSizeY * this.currentScale;
+          ctx.moveTo(x1, y1);
+          ctx.lineTo(x2, y2);
+          ctx.stroke();
+        }
       }
     }
   }
