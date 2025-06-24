@@ -211,20 +211,30 @@ export class SidebarComponent {
   }
 
   onConfirmDetailsDone() {
-    const details = this.confirmedPoints.map((pt, i) => ({
-      start: {
-        lat: pt.lat,
-        lon: pt.lon,
-        elevation: pt.elevation
-      },
-      path: this.paths[i].path,
-      speed: pt.speed
-    }));
+    console.log('📦 Preparing final simulation details...');
 
-    this.confirmDetailsFinalized.emit({
+    const details = this.confirmedPoints.map((pt, i) => {
+      // console.log(`🔹 Point ${i + 1}:`, pt);
+      // console.log(`   ➤ Path:`, this.paths[i].path);
+      return {
+        start: {
+          lat: pt.lat,
+          lon: pt.lon,
+          elevation: pt.elevation
+        },
+        path: this.paths[i].path,
+        speed: pt.speed
+      };
+    });
+
+    const payload = {
       segmentSize: this.terrainSegmentSize,
       details
-    });
+    };
+
+    console.log('✅ Emitting finalized data to parent component:', payload);
+
+    this.confirmDetailsFinalized.emit(payload);
 
     this.message = '✅ Details submitted successfully.';
     setTimeout(() => (this.message = ''), 2000);
