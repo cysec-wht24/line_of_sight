@@ -1,6 +1,7 @@
 import { Component, ViewChild, ChangeDetectorRef } from '@angular/core';
 import { SidebarComponent } from '../sidebar/sidebar.component';
 import { TimelineComponent } from './timeline/timeline.component';
+import { DemDisplayComponent } from './dem-display/dem-display.component';
 
 @Component({
   selector: 'app-main-view',
@@ -10,6 +11,7 @@ import { TimelineComponent } from './timeline/timeline.component';
 export class MainViewComponent {
   @ViewChild(SidebarComponent) sidebar!: SidebarComponent;
   @ViewChild(TimelineComponent) timeline!: TimelineComponent;
+  @ViewChild(DemDisplayComponent) demDisplay!: DemDisplayComponent;
 
   initialPoints: { lat: number; lon: number; elevation: number }[] = [];
 
@@ -103,6 +105,41 @@ export class MainViewComponent {
 
     // Optionally reset after short delay to avoid repeated triggering
     setTimeout(() => this.deletedPointIndex = null, 100);
+  }
+
+  onSidebarReset() {
+    console.log('🔁 Reset triggered by sidebar Redo button');
+
+    // Hide the timeline
+    this.timelineVisible = false;
+
+    // Reset slope-colored animation data
+    this.slopeColoredSimulation = [];
+
+    // Reset DEM animation / drawing if needed
+    this.movingPoints = [];
+
+    // Reset timeline component state (optional)
+    if (this.timeline && typeof this.timeline.clearSimulation === 'function') {
+      this.timeline.clearSimulation(); // Create this method in <app-timeline> if not already present
+    }
+
+    if (this.demDisplay && typeof this.demDisplay.clearDisplay === 'function') {
+      this.demDisplay.clearDisplay();
+    }
+
+    // Reset other internal flags
+    this.paths = [];
+    this.currentPath = [];
+    this.currentPathIndex = 0;
+    this.initialPoints = [];
+    this.deletedPointIndex = null;
+
+    this.selectionMode = false;
+    this.definePathMode = false;
+
+    // Trigger change detection
+    this.cdr.detectChanges();
   }
 }
 

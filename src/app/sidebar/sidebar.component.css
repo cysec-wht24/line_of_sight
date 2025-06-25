@@ -54,7 +54,7 @@
 
 .add-point-btn {
   flex: 1;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem;
   background-color: #3b82f6; /* blue-500 */
   color: white;
   border: none;
@@ -66,7 +66,7 @@
 
 .done-btn {
   flex: 1;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem;
   background-color: #10b981; /* green-500 */
   color: white;
   border: none;

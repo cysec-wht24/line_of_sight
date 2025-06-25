@@ -239,6 +239,34 @@ export class SidebarComponent {
     this.message = '✅ Details submitted successfully.';
     setTimeout(() => (this.message = ''), 2000);
   }
+
+  handleRedoClick() {
+    // ✅ Clear everything internally
+    this.terrainValue = null;
+    this.terrainSegmentSize = null;
+    this.selectionMode = false;
+    this.addPointMode = false;
+    this.definePathMode = false;
+    this.currentPathIndex = -1;
+    this.currentPath = [];
+    this.selectedPoint = null;
+    this.selectedSpeed = 0;
+    this.message = '';
+    this.showCard = false;
+    this.confirmedPoints = [];
+    this.paths = [];
+    this.isOpen = [];
+
+    // ✅ Emit event to parent
+    this.selectionModeChanged.emit(false);
+    this.definePathModeChanged.emit(false);
+    this.pathsChanged.emit({ paths: [], currentPath: [], currentPathIndex: -1 });
+    this.confirmedPointsChange.emit([]);
+    this.initialPointCleared.emit();
+    this.pointReset.emit();
+
+    console.log("🔁 Redo clicked: All state reset");
+  }
 }
 
 

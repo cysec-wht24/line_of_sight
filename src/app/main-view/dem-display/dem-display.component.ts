@@ -496,5 +496,19 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
       b: colorValue
     };
   }
+
+  clearDisplay(): void {
+    console.log('🧼 Clearing DEM display visuals');
+
+    this.confirmedPoints = [];
+    this.initialPoints = [];
+    this.paths = [];
+    this.currentPath = [];
+    this.currentPathIndex = 0;
+    this.movingPoints = [];
+    this.slopeColoredSimulation = [];
+
+    this.resizeAndRender();
+  }
 }
 

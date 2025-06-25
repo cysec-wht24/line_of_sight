@@ -40,6 +40,17 @@ export class TimelineComponent implements OnInit {
 
   ngOnInit(): void {}
 
+  clearSimulation(): void {
+    console.log('🧹 Clearing timeline simulation');
+
+    this.simulation = [];
+    this.currentTime = 0;
+    this.maxTime = 0;
+
+    // Notify parent that no positions exist now
+    this.emitPositions();
+  }
+
   getElevation(lon: number, lat: number): number {
     const epsilon = 1e-8;
     const {
