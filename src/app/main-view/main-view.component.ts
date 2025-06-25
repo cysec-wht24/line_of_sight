@@ -14,6 +14,7 @@ export class MainViewComponent {
   initialPoints: { lat: number; lon: number; elevation: number }[] = [];
 
   confirmedPoints: any[] = [];
+  timelineVisible: boolean = false;
   deletedPointIndex: number | null = null;
 
   movingPoints: { x: number, y: number, id: number }[] = [];
@@ -51,14 +52,23 @@ export class MainViewComponent {
   onConfirmDetailsFinalized(event: { segmentSize: number, details: any[] }) {
     console.log("✅ Finalized details received in main-view:", event);
 
-    if (this.timeline) {
-      this.timeline.startSimulation({
-        segmentSize: event.segmentSize,
-        details: event.details
-      });
-      // ✅ Store the simulation result to pass into <app-dem-display>
-      this.slopeColoredSimulation = this.timeline.simulation;
-    }
+    // Show timeline first
+    this.timelineVisible = true;
+
+    // Wait for Angular to render <app-timeline> before calling its method
+    setTimeout(() => {
+      this.cdr.detectChanges(); // ensure timeline is available now
+
+      if (this.timeline) {
+        this.timeline.startSimulation({
+          segmentSize: event.segmentSize,
+          details: event.details
+        });
+        this.slopeColoredSimulation = this.timeline.simulation;
+      } else {
+        console.warn("⚠️ Timeline not ready even after view init");
+      }
+    }, 0);
   }
 
   onPathsChanged(event: { paths?: any[], currentPath?: any[], currentPathIndex?: number }) {

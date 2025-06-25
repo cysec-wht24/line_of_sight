@@ -34,7 +34,7 @@ html, body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  /* padding: 1rem; */
+  padding: 1rem;
   gap: 1rem;
   height: 100%;         /* Match parent */
   overflow: hidden;     /* Prevent double scroll */
@@ -49,6 +49,13 @@ html, body {
   align-items: flex-start;
   justify-content: flex-start;
   /* border-radius: 0.375rem; */
+  /* Hide scrollbar visually but preserve scrolling */
+  scrollbar-width: none;        /* Firefox */
+  -ms-overflow-style: none;     /* IE 10+ */
+}
+
+.dem-display-wrapper::-webkit-scrollbar {
+  display: none;                /* Chrome, Safari, Edge */
 }
 
 .dem-display {

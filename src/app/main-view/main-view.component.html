@@ -32,7 +32,7 @@
       ></app-dem-display>
     </div>
 
-    <div class="timeline-wrapper">
+    <div class="timeline-wrapper" *ngIf="timelineVisible">
       <app-timeline
         class="timeline"
         (positionsChanged)="onPositionsChanged($event)"
