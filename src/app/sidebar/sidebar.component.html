@@ -43,7 +43,8 @@
       <ng-container *ngIf="selectedPoint">
         <p>Lat: {{ selectedPoint.lat.toFixed(5) }}, Lon: {{ selectedPoint.lon.toFixed(5) }}</p>
         <p>Elevation: {{ selectedPoint.elevation.toFixed(2) }} m</p>
-
+        <!-- <br> -->
+        <p>Enter Speed (m/s): </p>
         <input
           type="number"
           [(ngModel)]="selectedSpeed"
