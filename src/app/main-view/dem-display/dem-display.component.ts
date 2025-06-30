@@ -35,7 +35,7 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
   }> = [];
   @Input() currentPath: any[] = [];
   @Input() currentPathIndex: number = 0;
-  @Input() movingPoints: { x: number; y: number; id: number }[] = [];
+  @Input() movingPoints: { x: number; y: number; id: number }[] = []; // animated blue markers
   @Input() slopeColoredSimulation: any[] = [];
   
   @Output() pointSelected = new EventEmitter<{ lat: number; lon: number; elevation: number }>();
@@ -233,16 +233,17 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
   }
 
   private async loadDEM() {
-    const response = await fetch('assets/n25_e077_1arc_v3.dt2');
+    const response = await fetch('assets/n25_e077_converted.dt1');
     const arrayBuffer = await response.arrayBuffer();
     console.log('[DTED] Fetched array buffer of size:', arrayBuffer.byteLength);
 
     const dataView = new DataView(arrayBuffer);
 
     const HEADER_SIZE = 3428; // DTED2 file header size
-    const LAT_POINTS = 3601;  // Number of rows
-    const LON_POINTS = 3601;  // Number of columns
+    const LAT_POINTS = 1201;  // Number of rows
+    const LON_POINTS = 1201;  // Number of columns
     const COLUMN_SIZE = 8 + LAT_POINTS * 2 + 4; // Header + data + checksum = 8 + 7202 + 4 = 7214 bytes per column
+    const NODATA = -32767; // 🆕 Define DTED no-data value to ignore during range calc
 
     // Sanity check
     const expectedSize = HEADER_SIZE + LON_POINTS * COLUMN_SIZE;
@@ -272,22 +273,24 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
     this.rasterData = elevationData;
 
     // Use filename to infer base coordinate
-    this.tiepointX = 77;  // Longitude
+    this.tiepointX = 76.99958333333333;  // Longitude
     console.log('[DTED] Tiepoint X:', this.tiepointX);
-    this.tiepointY = 26;  // Latitude (approx)
+    this.tiepointY = 26.000416666666666;  // Latitude (approx)
     console.log('[DTED] Tiepoint Y:', this.tiepointY);
-    this.pixelSizeX = 1 / 3600;
+    this.pixelSizeX = 3 / 3600;
     console.log('[DTED] Pixel size X:', this.pixelSizeX);
-    this.pixelSizeY = 1 / 3600;
+    this.pixelSizeY = 3 / 3600;
     console.log('[DTED] Pixel size Y:', this.pixelSizeY);
 
-    // Find elevation range
+    // 🆕 Skip -32767 (no-data) while calculating elevation range
     this.minElevation = Infinity;
     this.maxElevation = -Infinity;
     for (let i = 0; i < elevationData.length; i++) {
       const val = elevationData[i];
-      if (val < this.minElevation) this.minElevation = val;
-      if (val > this.maxElevation) this.maxElevation = val;
+      if (val !== NODATA) {
+        if (val < this.minElevation) this.minElevation = val;
+        if (val > this.maxElevation) this.maxElevation = val;
+      }
     }
 
     console.log('[DTED] Elevation range:', this.minElevation, 'to', this.maxElevation);
@@ -302,7 +305,7 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
     this.demDataService.pixelSizeX = this.pixelSizeX;
     this.demDataService.pixelSizeY = this.pixelSizeY;
 
-    console.log('[DTED] DTED2 parsed successfully ✅');
+    console.log('[DTED] DTED1 parsed successfully ✅');
   }
 
   private resizeAndRender() {
