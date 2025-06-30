@@ -272,10 +272,16 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
     this.height = LAT_POINTS;
     this.rasterData = elevationData;
 
+    // Note: DTED files are typically oriented with North at the top, so tiepointY is the maximum latitude.
+    // This means the raster is oriented with increasing Y going downwards
+    // (i.e., the first row corresponds to the highest latitude).
+    // The first data point is always the southwest corner (bottom-left).
+    // But rendering libraries (and your canvas code) typically expect the top-left (northwest) as tiepoint.
     // Use filename to infer base coordinate
-    this.tiepointX = 76.99958333333333;  // Longitude
+    this.tiepointX = 76.99958333333333;  // minimum longitude (Western/left edge of the raster).
     console.log('[DTED] Tiepoint X:', this.tiepointX);
-    this.tiepointY = 26.000416666666666;  // Latitude (approx)
+    this.tiepointY = 26.000416666666666;  // maximum latitude (Northern/top edge of the raster).
+    
     console.log('[DTED] Tiepoint Y:', this.tiepointY);
     this.pixelSizeX = 3 / 3600;
     console.log('[DTED] Pixel size X:', this.pixelSizeX);
