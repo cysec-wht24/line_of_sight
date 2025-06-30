@@ -257,7 +257,7 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
     console.log('[DTED] Starting elevation extraction...');
 
     let offset = HEADER_SIZE;
-    for (let col = 0; col < LON_POINTS; col++) {
+    for (let col = 0; col < LON_POINTS; col++) { // reading 1.4 million points here
       const columnStart = offset + col * COLUMN_SIZE + 8; // Skip 8-byte header
       for (let row = 0; row < LAT_POINTS; row++) {
         const index = row * LON_POINTS + col;
