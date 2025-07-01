@@ -22,7 +22,7 @@
 
     <!-- Action Buttons -->
     <div class="button-group">
-      <button class="add-point-btn" (click)="startAddPoint()">Add Point</button>
+      <button class="add-point-btn" (click)="startAddPoint()" [disabled]="addPointMode">Add Point</button>
       <button
         class="done-btn"
         [disabled]="confirmedPoints.length === 0 || !terrainSegmentSize"
