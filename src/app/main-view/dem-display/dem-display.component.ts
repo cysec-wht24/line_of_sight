@@ -75,6 +75,7 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
 
   private shouldRender = false;
 
+  // Angular lifecycle hook that responds to input property changes
   ngOnChanges(changes: SimpleChanges): void {
     if (
       changes['confirmedPoints'] ||
@@ -96,6 +97,7 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
     }
   }
 
+  // Angular lifecycle hook called after the component’s view is initialized
   ngAfterViewInit(): void {
     this.loadDEM().then(() => {
       this.observeResizeAndRender();
@@ -108,6 +110,7 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
     });
   }
 
+  // Observes canvas container resize and triggers re-render
   observeResizeAndRender(): void {
   const canvasParent = this.canvasRef.nativeElement.parentElement;
 
@@ -120,6 +123,7 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
   this.resizeObserver.observe(canvasParent);
   }
 
+  // Angular lifecycle hook for cleanup when component is destroyed
   ngOnDestroy(): void {
   if (this.resizeObserver) {
     this.resizeObserver.disconnect();
@@ -131,6 +135,9 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
     this.resizeAndRender();
   }
 
+  // Removes a point and its related visuals (path, confirmed and initial point) from the display using its index.
+  // Resets current path if it was the one deleted.
+  // Triggers a re-render of the canvas.
   removeVisualsForDeletedPoint(index: number): void {
     // Remove path and point by index
     this.paths.splice(index, 1);
@@ -147,6 +154,8 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
     this.resizeAndRender();
   }
 
+  // Handles canvas click to select a point based on current mode (selection or definePath).
+  // Converts click coordinates to raster index and emits selected lat/lon/elevation info.
   onCanvasClick(event: MouseEvent) {
     // Only allow selection in selection or definePath mode
     if (!this.selectionMode && !this.definePathMode) return;
@@ -179,7 +188,8 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
     }
   }
 
-  // 🆕 Mouse move handler
+  // Displays a tooltip with lat/lon/elevation when the mouse moves over the canvas.
+  // Handles pixel-to-geographic coordinate conversion for the tooltip.
   onMouseMove(event: MouseEvent) {
     const canvas = this.canvasRef.nativeElement;
     const rect = canvas.getBoundingClientRect();
@@ -233,6 +243,9 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
     this.hoverInfo.visible = false;
   }
 
+  // Fetches a DTED file from URL and extracts tiepoint coordinates (lat/lon origin).
+  // Parses ASCII header to determine starting geographic coordinates.
+  // Converts DMS (degree, minute, second) format to decimal degrees.
   private async extractTiepointsFromDTED(
     url: string
   ): Promise<{ arrayBuffer: ArrayBuffer; tiepointX: number; tiepointY: number }> {
@@ -274,6 +287,9 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
     }
   }
 
+  // Loads and parses the DTED file to extract elevation data into a Float32Array.
+  // Computes metadata: width, height, min/max elevation.
+  // Saves data to DemDataService for use in other components.
   private async loadDEM() {
     const { arrayBuffer, tiepointX, tiepointY } = await this.extractTiepointsFromDTED('assets/n25_e077_converted.dt1');
     const dataView = new DataView(arrayBuffer);
@@ -339,6 +355,9 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
     console.log('[DTED] DTED1 parsed successfully ✅');
   }
 
+  // Adjusts canvas size based on its parent container.
+  // Calculates appropriate scaling factor for fitting canvas content.
+  // Calls renderToCanvas() with new dimensions.
   private resizeAndRender() {
     const canvas = this.canvasRef.nativeElement;
     const parent = canvas.parentElement!;
@@ -357,6 +376,14 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
     this.renderToCanvas(scaledWidth, scaledHeight, scale);
   }
 
+  // Renders the actual elevation data as grayscale image on the canvas.
+  // Draws:
+  // - Raster elevation grid
+  // - Confirmed paths (red lines)
+  // - Confirmed and in-progress path points (orange dots)
+  // - Initial points (outlined red circles)
+  // - Moving points (animated blue points with IDs)
+  // - Slope-colored simulation paths (gradient lines with slope info)
   private renderToCanvas(scaledWidth: number, scaledHeight: number, scale: number) {
     const canvas = this.canvasRef.nativeElement;
     const ctx = canvas.getContext('2d');
@@ -518,6 +545,7 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
     }
   }
 
+  // Maps elevation value to grayscale color based on its position between min and max elevation.
   private getColorForElevation(elevation: number, min: number, max: number) {
     if (elevation === 0) {
       return { r: 0, g: 0, b: 0 };
@@ -531,6 +559,8 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
     };
   }
 
+  // Clears all user-drawn visuals: confirmed points, paths, animations, etc.
+  // Triggers canvas re-render.
   clearDisplay(): void {
     console.log('🧼 Clearing DEM display visuals');
 

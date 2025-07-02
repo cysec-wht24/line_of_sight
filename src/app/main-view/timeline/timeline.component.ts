@@ -37,8 +37,15 @@ export class TimelineComponent implements OnInit {
   currentTime: number = 0;
   maxTime: number = 0;
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    // Lifecycle hook that runs once after component initialization.
+  // Currently empty but reserved for any setup logic.
+  }
 
+  // Resets the simulation state:
+  // - Clears all simulated path data.
+  // - Resets the simulation time.
+  // - Emits an empty or reset position update.
   clearSimulation(): void {
     this.simulation = [];
     this.currentTime = 0;
@@ -46,6 +53,9 @@ export class TimelineComponent implements OnInit {
     this.emitPositions();
   }
 
+  // Retrieves elevation value from raster data for a given lon/lat.
+  // Clamps coordinates within bounds and converts to row/col index.
+  // Returns the elevation at the calculated index or NaN if invalid.
   getElevation(lon: number, lat: number): number {
     const epsilon = 1e-8;
     const {
@@ -83,6 +93,8 @@ export class TimelineComponent implements OnInit {
     return rasterData[index];
   }
 
+  // Calculates the great-circle distance between two lat/lon points.
+  // Returns distance in meters using the Haversine formula.
   haversine(lat1: number, lon1: number, lat2: number, lon2: number): number {
     const R = 6371000;
     const toRad = (deg: number) => deg * (Math.PI / 180);
@@ -92,6 +104,9 @@ export class TimelineComponent implements OnInit {
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   }
 
+  // Interpolates the full path into a given number of equally spaced segments.
+  // Distributes segments proportionally to the segment lengths of the path.
+  // Returns a new array of lon/lat interpolated points.
   interpolateEntirePath(points: { lon: number; lat: number }[], totalSegments: number): { lon: number; lat: number }[] {
     const distances: number[] = [];
     let totalDistance = 0;
@@ -152,10 +167,18 @@ export class TimelineComponent implements OnInit {
     return elevationDiff >= 0 ? 'uphill' : 'downhill';
   }
 
+  // Returns a color string used to visually distinguish slope type.
+  // Orange-red for uphill, green for downhill.
   getSlopeColor(elevationDiff: number): string {
     return elevationDiff >= 0 ? '#FF5733' : '#00FF00';
   }
 
+  // Generates a simulation for each path by:
+  // - Interpolating the entire path into smaller segments.
+  // - Calculating time offset for each segment based on speed and slope.
+  // - Adjusting speed depending on elevation gain/loss using slope angle.
+  // - Stops the simulation if the slope is too steep to continue.
+  // Returns a list of simulated points with time-based paths.
   simulateMovement(details: PointData[]): SimulatedPoint[] {
     return details.map((point, idx) => {
       let timeOffset = 0;
@@ -213,6 +236,11 @@ export class TimelineComponent implements OnInit {
     });
   }
 
+  // Starts a new simulation based on input path and speed details.
+  // Supports two types of input:
+  // 1. Array of PointData (old format).
+  // 2. Object containing 'details' and 'segmentSize' (new flexible format).
+  // Sets up simulation points and max time, then emits initial positions.
   startSimulation(input: PointData[] | { details: PointData[], segmentSize: number }) {
     let details: PointData[] = [];
     let segmentSize = this.segmentCount;
@@ -234,36 +262,42 @@ export class TimelineComponent implements OnInit {
     this.emitPositions();
   }
 
+  // Calculates the current interpolated position for each simulated path based on `currentTime`.
+  // Uses linear interpolation between time offsets to get smooth movement.
+  // Returns an array of current positions with lon, lat, and id.
   getCurrentPositions(): { lon: number, lat: number, id: number }[] {
     return this.simulation.map(point => {
       const idx = point.path.findIndex(p => p.timeOffset > this.currentTime);
       if (idx === -1) {
         const last = point.path[point.path.length - 1];
-return { lon: last.lon, lat: last.lat, id: point.id };
-} else if (idx === 0) {
+        return { lon: last.lon, lat: last.lat, id: point.id };
+      } else if (idx === 0) {
         const first = point.path[0];
         return { lon: first.lon, lat: first.lat, id: point.id };
-} else {
-      const prev = point.path[idx - 1];
-      const next = point.path[idx];
-      let t = (this.currentTime - prev.timeOffset) / (next.timeOffset - prev.timeOffset);
+      } else {
+        const prev = point.path[idx - 1];
+        const next = point.path[idx];
+        let t = (this.currentTime - prev.timeOffset) / (next.timeOffset - prev.timeOffset);
         const clampedT = Math.min(Math.max(t, 0), 1);
-      const interpolatedLon = prev.lon + (next.lon - prev.lon) * clampedT;
+        const interpolatedLon = prev.lon + (next.lon - prev.lon) * clampedT;
         const interpolatedLat = prev.lat + (next.lat - prev.lat) * clampedT;
-
         return { lon: interpolatedLon, lat: interpolatedLat, id: point.id };
       }
     });
   }
 
+  // Called when the simulation time changes (e.g., via slider).
+  // Triggers an update of positions to reflect new simulation state.
   onTimeChange() {
     this.emitPositions();
   }
 
+  // Emits the current positions of all simulated entities to any parent component listening.
   emitPositions() {
     this.positionsChanged.emit(this.getCurrentPositions());
   }
 
+  // Formats a time duration in seconds into a human-readable string.
   formatTime(seconds: number): string {
     const totalSeconds = Math.floor(seconds);
     const days = Math.floor(totalSeconds / (24 * 3600));

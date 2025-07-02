@@ -6,10 +6,12 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
   styleUrls: ['./sidebar.component.css']
 })
 export class SidebarComponent {
+  // Inputs received from parent component
   @Input() selectedPoint: { lat: number; lon: number; elevation: number } | null = null;
   @Input() definePathMode: boolean = false;
   @Input() confirmedPoints: any[] = [];
 
+  // Outputs emitted to parent component
   @Output() pointReset = new EventEmitter<void>();
   @Output() selectionModeChanged = new EventEmitter<boolean>();
   @Output() definePathModeChanged = new EventEmitter<boolean>();
@@ -20,10 +22,12 @@ export class SidebarComponent {
   @Output() deletedPointIndexChange = new EventEmitter<number>();
   @Output() initialPointCleared = new EventEmitter<void>();
 
+  // UI state
   showCard = false;
   isOpen: boolean[] = [];
   message: string = '';
 
+  // Path and input data
   paths: Array<{
     start: { lat: number; lon: number; elevation: number };
     path: { lat: number; lon: number; elevation: number }[];
@@ -31,6 +35,7 @@ export class SidebarComponent {
 
   segmentCount: number = 0;
 
+  // Point and path input flags
   selectionMode: boolean = false;
   addPointMode: boolean = false;
   currentPathIndex: number = -1;
@@ -38,8 +43,13 @@ export class SidebarComponent {
 
   selectedSpeed: number = 0;
 
+  // Placeholder for future use
   onSegmentCountChange() {}
 
+   /**
+   * Activates Add Point mode
+   * Enables selectionMode and prompts user to select an initial point
+   */
   startAddPoint() {
     this.addPointMode = true;
     this.selectionMode = true;
@@ -50,6 +60,10 @@ export class SidebarComponent {
     this.selectionModeChanged.emit(true);
   }
 
+  /**
+   * Called when user selects a point on the map
+   * Sets it as initial point and enters path definition mode
+   */
   onMapPointSelected(point: { lat: number; lon: number; elevation: number }) {
     if (!this.addPointMode) return;
 
@@ -67,6 +81,9 @@ export class SidebarComponent {
     this.selectedSpeed = 0;
   }
 
+  /**
+   * Adds a path point to the current path in definition
+   */
   addPathPoint(point: { lat: number; lon: number; elevation: number }) {
     if (!this.definePathMode || this.currentPathIndex < 0) return;
 
@@ -80,6 +97,9 @@ export class SidebarComponent {
     });
   }
 
+  /**
+   * Finalizes a defined point (with its speed and path) into the confirmed points list
+   */
   finalizeCurrentPoint() {
     if (!this.selectedPoint || this.selectedSpeed <= 0 || this.currentPath.length === 0) return;
 
@@ -93,6 +113,9 @@ export class SidebarComponent {
     this.resetPathState();
   }
 
+  /**
+   * Clears the path associated with the current point being defined
+   */
   redoCurrentPoint() {
     if (this.currentPath.length === 0) return;
 
@@ -108,6 +131,9 @@ export class SidebarComponent {
     });
   }
 
+  /**
+   * Resets internal state after completing or cancelling a point/path
+   */
   resetPathState() {
     this.selectedPoint = null;
     this.selectedSpeed = 0;
@@ -122,11 +148,17 @@ export class SidebarComponent {
     this.definePathModeChanged.emit(false);
   }
 
+  /**
+   * Handles delete button click, preventing event bubbling
+   */
   onDeleteClick(index: number, event: MouseEvent) {
     event.stopPropagation();
     this.deletePoint(index);
   }
 
+  /**
+   * Deletes a confirmed point and resets simulation state if necessary
+   */
   deletePoint(index: number) {
     const isActiveInitial = this.selectedPoint &&
       this.paths[index] &&
@@ -166,10 +198,17 @@ export class SidebarComponent {
     });
   }
 
+  /**
+   * Toggles accordion open/closed for the given index
+   * Only one can be open at a time
+   */
   toggleOpen(i: number) {
     this.isOpen = this.isOpen.map((_, index) => index === i ? !this.isOpen[i] : false);
   }
 
+  /**
+   * Validates form and emits finalized simulation details if valid
+   */
   handleDoneClick() {
     const hasSegmentCount = this.segmentCount !== null && this.segmentCount > 0;
     const hasPoints = this.confirmedPoints.length > 0;
@@ -191,6 +230,9 @@ export class SidebarComponent {
     this.onConfirmDetailsDone();
   }
 
+  /**
+   * Prepares and emits finalized path and speed data to parent component
+   */
   onConfirmDetailsDone() {
     console.log('📦 Preparing final simulation details...');
 
@@ -216,6 +258,9 @@ export class SidebarComponent {
     setTimeout(() => (this.message = ''), 2000);
   }
 
+  /**
+   * Resets the entire sidebar state (used when Redo is clicked)
+   */
   handleRedoClick() {
     this.segmentCount = 0;
     this.selectionMode = false;
