@@ -18,6 +18,7 @@ import { DemDataService } from 'src/app/services/dem-data.service';
   templateUrl: './dem-display.component.html',
   styleUrls: ['./dem-display.component.css']
 })
+
 export class DemDisplayComponent implements AfterViewInit, OnChanges {
 
   constructor(private demDataService: DemDataService) {}
@@ -232,20 +233,57 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
     this.hoverInfo.visible = false;
   }
 
-  private async loadDEM() {
-    const response = await fetch('assets/n25_e077_converted.dt1');
+  private async extractTiepointsFromDTED(
+    url: string
+  ): Promise<{ arrayBuffer: ArrayBuffer; tiepointX: number; tiepointY: number }> {
+    const response = await fetch(url);
     const arrayBuffer = await response.arrayBuffer();
     console.log('[DTED] Fetched array buffer of size:', arrayBuffer.byteLength);
 
+    const decoder = new TextDecoder("ascii");
+
+    const rawLonStr = decoder.decode(arrayBuffer.slice(4, 13));   // e.g. 0770000E0
+    const rawLatStr = decoder.decode(arrayBuffer.slice(13, 22));  // e.g. 250000N00
+
+    console.log('[DTED] Raw lonStr:', rawLonStr, '| latStr:', rawLatStr);
+
+    // Use regex to extract valid DMS + hemisphere parts
+    const lonMatch = rawLonStr.match(/(\d{3})(\d{2})(\d{2})([EW])/);
+    const latMatch = rawLatStr.match(/(\d{2})(\d{2})(\d{2})([NS])/);
+
+    if (!lonMatch || !latMatch) {
+      console.error('[DTED] Failed to extract DMS from header.');
+      return { arrayBuffer, tiepointX: NaN, tiepointY: NaN };
+    }
+
+    const lonDMS = lonMatch.slice(1, 5); // [deg, min, sec, hemi]
+    const latDMS = latMatch.slice(1, 5);
+
+    const tiepointX = dmsToDecimal(lonMatch[1], lonMatch[2], lonMatch[3], lonMatch[4]);
+  const tiepointY = dmsToDecimal(latMatch[1], latMatch[2], latMatch[3], latMatch[4]);
+
+    console.log('[DTED] Extracted Tiepoints -> X:', tiepointX, 'Y:', tiepointY);
+
+    return { arrayBuffer, tiepointX, tiepointY };
+
+    // Convert DMS (degree, minute, second, hemisphere) to decimal
+    function dmsToDecimal(deg: string, min: string, sec: string, hemi: string): number {
+      let decimal = parseInt(deg, 10) + parseInt(min, 10) / 60 + parseInt(sec, 10) / 3600;
+      if (hemi === 'W' || hemi === 'S') decimal *= -1;
+      return decimal;
+    }
+  }
+
+  private async loadDEM() {
+    const { arrayBuffer, tiepointX, tiepointY } = await this.extractTiepointsFromDTED('assets/n25_e077_converted.dt1');
     const dataView = new DataView(arrayBuffer);
 
-    const HEADER_SIZE = 3428; // DTED2 file header size
-    const LAT_POINTS = 1201;  // Number of rows
-    const LON_POINTS = 1201;  // Number of columns
-    const COLUMN_SIZE = 8 + LAT_POINTS * 2 + 4; // Header + data + checksum = 8 + 7202 + 4 = 7214 bytes per column
-    const NODATA = -32767; // 🆕 Define DTED no-data value to ignore during range calc
+    const HEADER_SIZE = 3428;
+    const LAT_POINTS = 1201;
+    const LON_POINTS = 1201;
+    const COLUMN_SIZE = 8 + LAT_POINTS * 2 + 4;
+    const NODATA = -32767;
 
-    // Sanity check
     const expectedSize = HEADER_SIZE + LON_POINTS * COLUMN_SIZE;
     console.log('[DTED] Expected buffer size:', expectedSize);
     if (arrayBuffer.byteLength < expectedSize) {
@@ -255,14 +293,14 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
 
     const elevationData = new Float32Array(LAT_POINTS * LON_POINTS);
     console.log('[DTED] Starting elevation extraction...');
-
     let offset = HEADER_SIZE;
-    for (let col = 0; col < LON_POINTS; col++) { // reading 1.4 million points here
-      const columnStart = offset + col * COLUMN_SIZE + 8; // Skip 8-byte header
+
+    for (let col = 0; col < LON_POINTS; col++) {
+      const columnStart = offset + col * COLUMN_SIZE + 8;
       for (let row = 0; row < LAT_POINTS; row++) {
         const index = row * LON_POINTS + col;
         const valOffset = columnStart + row * 2;
-        const elevation = dataView.getInt16(valOffset, false); // big-endian
+        const elevation = dataView.getInt16(valOffset, false);
         elevationData[index] = elevation;
       }
       if (col % 600 === 0) console.log(`[DTED] Processed column ${col}/${LON_POINTS}`);
@@ -272,23 +310,11 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
     this.height = LAT_POINTS;
     this.rasterData = elevationData;
 
-    // Note: DTED files are typically oriented with North at the top, so tiepointY is the maximum latitude.
-    // This means the raster is oriented with increasing Y going downwards
-    // (i.e., the first row corresponds to the highest latitude).
-    // The first data point is always the southwest corner (bottom-left).
-    // But rendering libraries (and your canvas code) typically expect the top-left (northwest) as tiepoint.
-    // Use filename to infer base coordinate
-    this.tiepointX = 76.99958333333333;  // minimum longitude (Western/left edge of the raster).
-    console.log('[DTED] Tiepoint X:', this.tiepointX);
-    this.tiepointY = 26.000416666666666;  // maximum latitude (Northern/top edge of the raster).
-    
-    console.log('[DTED] Tiepoint Y:', this.tiepointY);
+    this.tiepointX = tiepointX;
+    this.tiepointY = tiepointY;
     this.pixelSizeX = 3 / 3600;
-    console.log('[DTED] Pixel size X:', this.pixelSizeX);
     this.pixelSizeY = 3 / 3600;
-    console.log('[DTED] Pixel size Y:', this.pixelSizeY);
 
-    // 🆕 Skip -32767 (no-data) while calculating elevation range
     this.minElevation = Infinity;
     this.maxElevation = -Infinity;
     for (let i = 0; i < elevationData.length; i++) {
@@ -300,7 +326,6 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
     }
 
     console.log('[DTED] Elevation range:', this.minElevation, 'to', this.maxElevation);
-    console.log('[DTED] Resolution:', this.pixelSizeX, '° per pixel');
 
     // Save to service
     this.demDataService.rasterData = Array.from(this.rasterData);
