@@ -18,7 +18,7 @@ export class SidebarComponent {
   @Output() confirmedPointsChange = new EventEmitter<any[]>();
   @Output() initialPointSelected = new EventEmitter<{ lat: number; lon: number; elevation: number }>();
   @Output() deletedPointIndexChange = new EventEmitter<number>();
-  @Output() initialPointCleared = new EventEmitter<void>(); // ✅ added
+  @Output() initialPointCleared = new EventEmitter<void>();
 
   showCard = false;
   isOpen: boolean[] = [];
@@ -29,8 +29,7 @@ export class SidebarComponent {
     path: { lat: number; lon: number; elevation: number }[];
   }> = [];
 
-  terrainValue: number | null = null;
-  terrainSegmentSize: number | null = null;
+  segmentCount: number = 0;
 
   selectionMode: boolean = false;
   addPointMode: boolean = false;
@@ -39,18 +38,7 @@ export class SidebarComponent {
 
   selectedSpeed: number = 0;
 
-  onTerrainChange() {
-    this.terrainSegmentSize = this.getSegmentSize(this.terrainValue ?? 0);
-  }
-
-  getSegmentSize(num: number): number | null {
-    if ([1, 6, 7, 9].includes(num)) return 500;
-    if ([2, 3, 4].includes(num)) return 1000;
-    if (num === 5) return 250;
-    if (num === 8) return 100;
-    if (num === 10) return 3000;
-    return null;
-  }
+  onSegmentCountChange() {}
 
   startAddPoint() {
     this.addPointMode = true;
@@ -67,8 +55,6 @@ export class SidebarComponent {
 
     this.selectedPoint = point;
     this.message = '';
-
-    // ✅ Emit point to draw on DEM
     this.initialPointSelected.emit(point);
 
     this.definePathMode = true;
@@ -98,17 +84,12 @@ export class SidebarComponent {
     if (!this.selectedPoint || this.selectedSpeed <= 0 || this.currentPath.length === 0) return;
 
     const pointWithSpeed = { ...this.selectedPoint, speed: this.selectedSpeed };
-
-    // Add to confirmed points
     this.confirmedPoints = [...this.confirmedPoints, pointWithSpeed];
     this.confirmedPointsChange.emit([...this.confirmedPoints]);
     this.initialPointCleared.emit();
 
-    // Ensure UI state is synced
     this.isOpen = this.confirmedPoints.map(() => false);
     this.showCard = false;
-
-    // Reset selection state for next point
     this.resetPathState();
   }
 
@@ -142,7 +123,7 @@ export class SidebarComponent {
   }
 
   onDeleteClick(index: number, event: MouseEvent) {
-    event.stopPropagation(); // Prevent toggleOpen from firing
+    event.stopPropagation();
     this.deletePoint(index);
   }
 
@@ -190,15 +171,15 @@ export class SidebarComponent {
   }
 
   handleDoneClick() {
-    const hasTerrain = this.terrainValue !== null && this.terrainSegmentSize !== null;
+    const hasSegmentCount = this.segmentCount !== null && this.segmentCount > 0;
     const hasPoints = this.confirmedPoints.length > 0;
     const allPathsSet =
       this.paths.length === this.confirmedPoints.length &&
       this.paths.every(p => p.path.length > 0);
 
-    if (!hasTerrain || !hasPoints || !allPathsSet) {
+    if (!hasSegmentCount || !hasPoints || !allPathsSet) {
       const reasons: string[] = [];
-      if (!hasTerrain) reasons.push('terrain type');
+      if (!hasSegmentCount) reasons.push('segment count');
       if (!hasPoints) reasons.push('at least one point');
       if (!allPathsSet) reasons.push('paths for all points');
 
@@ -213,27 +194,22 @@ export class SidebarComponent {
   onConfirmDetailsDone() {
     console.log('📦 Preparing final simulation details...');
 
-    const details = this.confirmedPoints.map((pt, i) => {
-      // console.log(`🔹 Point ${i + 1}:`, pt);
-      // console.log(`   ➤ Path:`, this.paths[i].path);
-      return {
-        start: {
-          lat: pt.lat,
-          lon: pt.lon,
-          elevation: pt.elevation
-        },
-        path: this.paths[i].path,
-        speed: pt.speed
-      };
-    });
+    const details = this.confirmedPoints.map((pt, i) => ({
+      start: {
+        lat: pt.lat,
+        lon: pt.lon,
+        elevation: pt.elevation
+      },
+      path: this.paths[i].path,
+      speed: pt.speed
+    }));
 
     const payload = {
-      segmentSize: this.terrainSegmentSize,
+      segmentSize: this.segmentCount,
       details
     };
 
     console.log('✅ Emitting finalized data to parent component:', payload);
-
     this.confirmDetailsFinalized.emit(payload);
 
     this.message = '✅ Details submitted successfully.';
@@ -241,9 +217,7 @@ export class SidebarComponent {
   }
 
   handleRedoClick() {
-    // ✅ Clear everything internally
-    this.terrainValue = null;
-    this.terrainSegmentSize = null;
+    this.segmentCount = 0;
     this.selectionMode = false;
     this.addPointMode = false;
     this.definePathMode = false;
@@ -257,7 +231,6 @@ export class SidebarComponent {
     this.paths = [];
     this.isOpen = [];
 
-    // ✅ Emit event to parent
     this.selectionModeChanged.emit(false);
     this.definePathModeChanged.emit(false);
     this.pathsChanged.emit({ paths: [], currentPath: [], currentPathIndex: -1 });

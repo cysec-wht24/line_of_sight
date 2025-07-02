@@ -4,19 +4,17 @@
   <div class="top-section">
     <div class="form-control">
       <label class="label">
-        <span class="label-text">Terrain Type (1–10)</span>
+        <span class="label-text">Total Segment Count</span>
       </label>
       <input
         type="number"
-        min="1"
-        max="10"
-        [(ngModel)]="terrainValue"
-        (change)="onTerrainChange()"
+        [(ngModel)]="segmentCount"
+        (change)="onSegmentCountChange()"
         class="terrain-input"
-        placeholder="Enter terrain type"
+        placeholder="Enter number of segments (e.g. 6)"
       />
-      <p *ngIf="terrainSegmentSize" class="segment-size">
-        Segment Size: {{ terrainSegmentSize }} m
+      <p *ngIf="segmentCount > 0" class="segment-size">
+        Total segments: {{ segmentCount }}
       </p>
     </div>
 
@@ -25,7 +23,7 @@
       <button class="add-point-btn" (click)="startAddPoint()" [disabled]="addPointMode">Add Point</button>
       <button
         class="done-btn"
-        [disabled]="confirmedPoints.length === 0 || !terrainSegmentSize"
+        [disabled]="confirmedPoints.length === 0 || segmentCount <= 0"
         (click)="handleDoneClick()"
       >
         Done

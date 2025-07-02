@@ -28,11 +28,10 @@ interface SimulatedPoint {
   styleUrls: ['./timeline.component.css']
 })
 export class TimelineComponent implements OnInit {
-
   constructor(private demDataService: DemDataService) {}
 
   @Output() positionsChanged = new EventEmitter<{ lon: number, lat: number, id: number }[]>();
-  @Input() segmentLength: number = 10;
+  @Input() segmentCount: number = 10;
 
   simulation: SimulatedPoint[] = [];
   currentTime: number = 0;
@@ -41,13 +40,9 @@ export class TimelineComponent implements OnInit {
   ngOnInit(): void {}
 
   clearSimulation(): void {
-    console.log('🧹 Clearing timeline simulation');
-
     this.simulation = [];
     this.currentTime = 0;
     this.maxTime = 0;
-
-    // Notify parent that no positions exist now
     this.emitPositions();
   }
 
@@ -97,22 +92,45 @@ export class TimelineComponent implements OnInit {
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   }
 
-  interpolatePoints(p1: { lon: number, lat: number }, p2: { lon: number, lat: number }, distance: number, segmentLength: number): { lon: number, lat: number }[] {
-    console.log(`Interpolating points from (${p1.lon}, ${p1.lat}) to (${p2.lon}, ${p2.lat}) over distance ${distance} with segment length ${segmentLength}`);
-    const segments = Math.ceil(distance / segmentLength);
-    const result: { lon: number, lat: number }[] = [];
-    for (let i = 1; i <= segments; i++) {
-      const t = i / segments;
-      result.push({
-        lon: p1.lon + t * (p2.lon - p1.lon),
-        lat: p1.lat + t * (p2.lat - p1.lat)
-      });
+  interpolateEntirePath(points: { lon: number; lat: number }[], totalSegments: number): { lon: number; lat: number }[] {
+    const distances: number[] = [];
+    let totalDistance = 0;
+    for (let i = 0; i < points.length - 1; i++) {
+      const d = this.haversine(points[i].lat, points[i].lon, points[i + 1].lat, points[i + 1].lon);
+      distances.push(d);
+      totalDistance += d;
     }
+
+    const result: { lon: number; lat: number }[] = [points[0]];
+    let accumulatedSegments = 0;
+
+    for (let i = 0; i < points.length - 1; i++) {
+      const p1 = points[i];
+      const p2 = points[i + 1];
+      const idealSegments = (distances[i] / totalDistance) * totalSegments;
+      let segmentCount = Math.round(idealSegments);
+
+      // Final adjustment to hit exactly totalSegments
+      if (i === points.length - 2) {
+        segmentCount = totalSegments - accumulatedSegments;
+      }
+
+      for (let j = 1; j <= segmentCount; j++) {
+        const t = j / segmentCount;
+        result.push({
+          lon: p1.lon + t * (p2.lon - p1.lon),
+          lat: p1.lat + t * (p2.lat - p1.lat),
+        });
+      }
+
+      accumulatedSegments += segmentCount;
+    }
+
     return result;
   }
 
+
   getSpeedFactorUphill(angle: number): number {
-    console.log(`Calculating speed factor for uphill angle: ${angle}`);
     if (angle >= 45) return 0;
     if (angle > 40) return 0.4;
     if (angle > 30) return 0.5;
@@ -122,7 +140,6 @@ export class TimelineComponent implements OnInit {
   }
 
   getSpeedFactorDownhill(angle: number): number {
-    console.log(`Calculating speed factor for downhill angle: ${angle}`);
     if (angle >= 45) return 0;
     if (angle > 40) return 0.7;
     if (angle > 30) return 0.6;
@@ -131,141 +148,88 @@ export class TimelineComponent implements OnInit {
     return 0.4;
   }
 
-  // NEW: Helper to get slope type
   getSlopeType(elevationDiff: number): 'uphill' | 'downhill' {
     return elevationDiff >= 0 ? 'uphill' : 'downhill';
   }
 
-  // NEW: Helper to get color
   getSlopeColor(elevationDiff: number): string {
-    return elevationDiff >= 0 ? '#FF5733' : '#00FF00'; // Yellow for uphill, green for downhill
+    return elevationDiff >= 0 ? '#FF5733' : '#00FF00';
   }
 
   simulateMovement(details: PointData[]): SimulatedPoint[] {
-    const result: SimulatedPoint[] = [];
-
-    details.forEach((point, idx) => {
+    return details.map((point, idx) => {
       let timeOffset = 0;
       let stopped = false;
-      let prev = point.start;
-
-      const elevationStart = this.getElevation(prev.lon, prev.lat);
-      const simPath: SimulatedPathPoint[] = [{
-        lon: prev.lon,
-        lat: prev.lat,
-        timeOffset: 0,
-        effectiveSpeed: point.speed
-      }];
-
-      let lastElevation = elevationStart;
       const fullPath = [point.start, ...point.path];
+      const interpolated = this.interpolateEntirePath(fullPath, this.segmentCount);
+      const simPath: SimulatedPathPoint[] = [];
+      let lastElevation = this.getElevation(interpolated[0].lon, interpolated[0].lat);
 
-      for (let i = 0; i < fullPath.length - 1; i++) {
-        const start = fullPath[i];
-        const end = fullPath[i + 1];
-        const distance = this.haversine(start.lat, start.lon, end.lat, end.lon);
-        const segments = this.interpolatePoints(start, end, distance, this.segmentLength);
-        let segmentStart = start;
+      simPath.push({
+        lon: interpolated[0].lon,
+        lat: interpolated[0].lat,
+        timeOffset,
+        effectiveSpeed: point.speed,
+      });
 
-        for (const segmentEnd of segments) {
-          const segmentDistance = this.haversine(segmentStart.lat, segmentStart.lon, segmentEnd.lat, segmentEnd.lon);
-          const elevationEnd = this.getElevation(segmentEnd.lon, segmentEnd.lat);
-          const elevationDiff = elevationEnd - lastElevation;
-          console.log(`elevationEnd: ${elevationEnd}, lastElevation: ${lastElevation}, elevaionDiff: ${elevationDiff}`);
-          console.log("ElevationDiff: ", elevationDiff);
-          const angle = Math.abs(Math.atan2(elevationDiff, segmentDistance) * 180 / Math.PI);
-          console.log("angle: ", angle);
+      for (let i = 1; i < interpolated.length; i++) {
+        const prev = interpolated[i - 1];
+        const curr = interpolated[i];
+        const distance = this.haversine(prev.lat, prev.lon, curr.lat, curr.lon);
+        const elevation = this.getElevation(curr.lon, curr.lat);
 
-          let factor: number;
-          if (elevationDiff >= 0) {
-            factor = this.getSpeedFactorUphill(angle);
-          } else {
-            factor = this.getSpeedFactorDownhill(angle);
-          }
-
-          console.log(`Segment Distance: ${segmentDistance} meters, Elevation Diff: ${elevationDiff}, Angle: ${angle}`);
-
-          if (factor === 0) {
-            stopped = true;
-            simPath.push({
-              lon: segmentStart.lon,
-              lat: segmentStart.lat,
-              timeOffset: timeOffset,
-              effectiveSpeed: 0,
-              slopeType: this.getSlopeType(elevationDiff),
-              color: this.getSlopeColor(elevationDiff)
-            });
-            break;
-          }
-
-          const effectiveSpeed = point.speed * factor;
-          const timeToNext = segmentDistance / effectiveSpeed;
-          timeOffset += timeToNext;
-
-          simPath.push({
-            lon: segmentEnd.lon,
-            lat: segmentEnd.lat,
-            timeOffset: timeOffset,
-            effectiveSpeed: effectiveSpeed,
-            slopeType: this.getSlopeType(elevationDiff),
-            color: this.getSlopeColor(elevationDiff)
-          });
-
-          lastElevation = elevationEnd;
-          segmentStart = segmentEnd;
+        if (isNaN(elevation)) {
+          console.warn(`Skipping segment due to invalid elevation at (${curr.lon}, ${curr.lat})`);
+          continue;
         }
 
-        if (stopped) break;
+        const elevationDiff = elevation - lastElevation;
+        const angle = Math.abs(Math.atan2(elevationDiff, distance) * 180 / Math.PI);
+
+        let factor = elevationDiff >= 0 ? this.getSpeedFactorUphill(angle) : this.getSpeedFactorDownhill(angle);
+        if (factor === 0) {
+          stopped = true;
+          simPath.push({ lon: prev.lon, lat: prev.lat, timeOffset, effectiveSpeed: 0, slopeType: this.getSlopeType(elevationDiff), color: this.getSlopeColor(elevationDiff) });
+          break;
+        }
+
+        const effectiveSpeed = point.speed * factor;
+        const timeToNext = distance / effectiveSpeed;
+        timeOffset += timeToNext;
+
+        simPath.push({
+          lon: curr.lon,
+          lat: curr.lat,
+          timeOffset,
+          effectiveSpeed,
+          slopeType: this.getSlopeType(elevationDiff),
+          color: this.getSlopeColor(elevationDiff)
+        });
+
+        lastElevation = elevation;
       }
 
-      result.push({
-        id: idx,
-        path: simPath,
-        stopped
-      });
+      return { id: idx, path: simPath, stopped };
     });
-
-    return result;
   }
 
   startSimulation(input: PointData[] | { details: PointData[], segmentSize: number }) {
-
-    // this.simulation = [];
-    // this.currentTime = 0;
-    // this.maxTime = 0;
-
-    //console.log('🔄 Starting simulation with input:', input);
-
     let details: PointData[] = [];
-    let segmentSize = this.segmentLength;
+    let segmentSize = this.segmentCount;
 
-    if (input && typeof input === 'object' && 'details' in input && 'segmentSize' in input) {
+    if ('details' in input && 'segmentSize' in input) {
       details = input.details;
       segmentSize = input.segmentSize;
     } else if (Array.isArray(input)) {
       details = input;
     } else {
-      console.warn("⚠️ Invalid simulation input format:", input);
+      console.warn("Invalid simulation input format", input);
       return;
     }
 
-    this.segmentLength = segmentSize;
-
-    // console.log('🚀 Starting simulation with:', {
-    //   segmentLength: this.segmentLength,
-    //   details
-    // });
-
+    this.segmentCount = segmentSize;
     this.simulation = this.simulateMovement(details);
-    console.log('✅ Simulation complete:', this.simulation);
-
-    if (this.simulation.length === 0) {
-      console.warn("⚠️ No points simulated.");
-      this.maxTime = 0;
-    } else {
-      this.maxTime = Math.max(...this.simulation.flatMap(p => p.path.map(pt => pt.timeOffset)));
-    }
-
+    this.maxTime = this.simulation.length === 0 ? 0 : Math.max(...this.simulation.flatMap(p => p.path.map(pt => pt.timeOffset)));
     this.currentTime = 0;
     this.emitPositions();
   }
@@ -275,16 +239,16 @@ export class TimelineComponent implements OnInit {
       const idx = point.path.findIndex(p => p.timeOffset > this.currentTime);
       if (idx === -1) {
         const last = point.path[point.path.length - 1];
-        return { lon: last.lon, lat: last.lat, id: point.id };
-      } else if (idx === 0) {
+return { lon: last.lon, lat: last.lat, id: point.id };
+} else if (idx === 0) {
         const first = point.path[0];
         return { lon: first.lon, lat: first.lat, id: point.id };
-      } else {
-        const prev = point.path[idx - 1];
-        const next = point.path[idx];
-        let t = (this.currentTime - prev.timeOffset) / (next.timeOffset - prev.timeOffset);
+} else {
+      const prev = point.path[idx - 1];
+      const next = point.path[idx];
+      let t = (this.currentTime - prev.timeOffset) / (next.timeOffset - prev.timeOffset);
         const clampedT = Math.min(Math.max(t, 0), 1);
-        const interpolatedLon = prev.lon + (next.lon - prev.lon) * clampedT;
+      const interpolatedLon = prev.lon + (next.lon - prev.lon) * clampedT;
         const interpolatedLat = prev.lat + (next.lat - prev.lat) * clampedT;
 
         return { lon: interpolatedLon, lat: interpolatedLat, id: point.id };
@@ -306,7 +270,7 @@ export class TimelineComponent implements OnInit {
     const hours = Math.floor((totalSeconds % (24 * 3600)) / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const secs = totalSeconds % 60;
-
+    
     let parts = [];
     if (days > 0) parts.push(`${days}d`);
     if (hours > 0 || days > 0) parts.push(`${hours}h`);
@@ -316,5 +280,6 @@ export class TimelineComponent implements OnInit {
     return parts.join(' ');
   }
 }
+
 
 
