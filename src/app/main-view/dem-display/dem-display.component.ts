@@ -273,7 +273,7 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
     const latDMS = latMatch.slice(1, 5);
 
     const tiepointX = dmsToDecimal(lonMatch[1], lonMatch[2], lonMatch[3], lonMatch[4]);
-  const tiepointY = dmsToDecimal(latMatch[1], latMatch[2], latMatch[3], latMatch[4]);
+    const tiepointY = dmsToDecimal(latMatch[1], latMatch[2], latMatch[3], latMatch[4]);
 
     console.log('[DTED] Extracted Tiepoints -> X:', tiepointX, 'Y:', tiepointY);
 
