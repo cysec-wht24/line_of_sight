@@ -104,41 +104,54 @@ export class TimelineComponent implements OnInit {
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   }
 
+  getTotalDistance(points: { lon: number; lat: number }[]): number {
+    let total = 0;
+
+    for (let i = 1; i < points.length; i++) {
+      const d = this.haversine(
+        points[i - 1].lat, points[i - 1].lon,
+        points[i].lat, points[i].lon
+      );
+      total += d;
+    }
+
+    console.log(`[Total Distance] Path has total distance: ${total.toFixed(2)} meters`);
+    return total;
+  }
+
   // Interpolates the full path into a given number of equally spaced segments.
   // Distributes segments proportionally to the segment lengths of the path.
   // Returns a new array of lon/lat interpolated points.
   interpolateEntirePath(points: { lon: number; lat: number }[], totalSegments: number): { lon: number; lat: number }[] {
-    const distances: number[] = [];
-    let totalDistance = 0;
-    for (let i = 0; i < points.length - 1; i++) {
-      const d = this.haversine(points[i].lat, points[i].lon, points[i + 1].lat, points[i + 1].lon);
-      distances.push(d);
-      totalDistance += d;
-    }
-
+    const totalDistance = this.getTotalDistance(points);
+    const segmentLength = totalDistance / totalSegments;
     const result: { lon: number; lat: number }[] = [points[0]];
-    let accumulatedSegments = 0;
 
-    for (let i = 0; i < points.length - 1; i++) {
-      const p1 = points[i];
-      const p2 = points[i + 1];
-      const idealSegments = (distances[i] / totalDistance) * totalSegments;
-      let segmentCount = Math.round(idealSegments);
+    let currentDistance = 0;
+    let targetDistance = segmentLength;
+    let i = 1;
 
-      // Final adjustment to hit exactly totalSegments
-      if (i === points.length - 2) {
-        segmentCount = totalSegments - accumulatedSegments;
+    while (i < points.length) {
+      const p1 = points[i - 1];
+      const p2 = points[i];
+      const segmentDist = this.haversine(p1.lat, p1.lon, p2.lat, p2.lon);
+
+      if ((currentDistance + segmentDist) < targetDistance) {
+        currentDistance += segmentDist;
+        i++;
+        continue;
       }
 
-      for (let j = 1; j <= segmentCount; j++) {
-        const t = j / segmentCount;
-        result.push({
-          lon: p1.lon + t * (p2.lon - p1.lon),
-          lat: p1.lat + t * (p2.lat - p1.lat),
-        });
-      }
+      const remaining = targetDistance - currentDistance;
+      const t = remaining / segmentDist;
 
-      accumulatedSegments += segmentCount;
+      const interpolatedPoint = {
+        lon: p1.lon + t * (p2.lon - p1.lon),
+        lat: p1.lat + t * (p2.lat - p1.lat),
+      };
+
+      result.push(interpolatedPoint);
+      targetDistance += segmentLength;
     }
 
     return result;
@@ -186,17 +199,11 @@ export class TimelineComponent implements OnInit {
       const fullPath = [point.start, ...point.path];
       const interpolated = this.interpolateEntirePath(fullPath, this.segmentCount);
       const simPath: SimulatedPathPoint[] = [];
-      let lastElevation = this.getElevation(interpolated[0].lon, interpolated[0].lat);
 
-      simPath.push({
-        lon: interpolated[0].lon,
-        lat: interpolated[0].lat,
-        timeOffset,
-        effectiveSpeed: point.speed,
-      });
+      let prev = interpolated[0];
+      let lastElevation = this.getElevation(prev.lon, prev.lat);
 
       for (let i = 1; i < interpolated.length; i++) {
-        const prev = interpolated[i - 1];
         const curr = interpolated[i];
         const distance = this.haversine(prev.lat, prev.lon, curr.lat, curr.lon);
         const elevation = this.getElevation(curr.lon, curr.lat);
@@ -208,11 +215,23 @@ export class TimelineComponent implements OnInit {
 
         const elevationDiff = elevation - lastElevation;
         const angle = Math.abs(Math.atan2(elevationDiff, distance) * 180 / Math.PI);
+        const slopeType = this.getSlopeType(elevationDiff);
+        const color = this.getSlopeColor(elevationDiff);
 
-        let factor = elevationDiff >= 0 ? this.getSpeedFactorUphill(angle) : this.getSpeedFactorDownhill(angle);
+        let factor = elevationDiff >= 0
+          ? this.getSpeedFactorUphill(angle)
+          : this.getSpeedFactorDownhill(angle);
+
         if (factor === 0) {
           stopped = true;
-          simPath.push({ lon: prev.lon, lat: prev.lat, timeOffset, effectiveSpeed: 0, slopeType: this.getSlopeType(elevationDiff), color: this.getSlopeColor(elevationDiff) });
+          simPath.push({
+            lon: prev.lon,
+            lat: prev.lat,
+            timeOffset,
+            effectiveSpeed: 0,
+            slopeType,
+            color,
+          });
           break;
         }
 
@@ -220,16 +239,29 @@ export class TimelineComponent implements OnInit {
         const timeToNext = distance / effectiveSpeed;
         timeOffset += timeToNext;
 
+        // ✅ Push the first segment only now, with slope and color
+        if (i === 1) {
+          simPath.push({
+            lon: prev.lon,
+            lat: prev.lat,
+            timeOffset: 0,
+            effectiveSpeed,
+            slopeType,
+            color,
+          });
+        }
+
         simPath.push({
           lon: curr.lon,
           lat: curr.lat,
           timeOffset,
           effectiveSpeed,
-          slopeType: this.getSlopeType(elevationDiff),
-          color: this.getSlopeColor(elevationDiff)
+          slopeType,
+          color,
         });
 
         lastElevation = elevation;
+        prev = curr;
       }
 
       return { id: idx, path: simPath, stopped };
