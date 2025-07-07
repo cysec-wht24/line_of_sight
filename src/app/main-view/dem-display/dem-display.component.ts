@@ -86,7 +86,7 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
       if (this.canvasRef?.nativeElement) {
         this.resizeAndRender();
       } else {
-        this.shouldRender = true;
+        this.shouldRender = true; // later will be used to complete pending render
       }
     }
 
@@ -119,7 +119,6 @@ export class DemDisplayComponent implements AfterViewInit, OnChanges {
   this.resizeObserver = new ResizeObserver(() => {
     this.resizeAndRender();
   });
-
   this.resizeObserver.observe(canvasParent);
   }
 
